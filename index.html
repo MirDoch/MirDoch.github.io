@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MirDoch 的网页导航：实用工具，打开即用。首个入口为 NVIDIA GPU 算力与参数对比。">
+  <meta name="theme-color" content="#f5f7f2">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <title>网页导航 · MirDoch</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7f2;
+      --paper: #fff;
+      --ink: #18241c;
+      --muted: #637168;
+      --line: #dce3d8;
+      --green: #375e25;
+      --lime: #cde99c;
+      --font: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.7 var(--font); }
+    a { color: inherit; }
+    a:focus-visible { outline: 3px solid var(--green); outline-offset: 6px; }
+    .skip { position: absolute; top: -80px; left: 20px; z-index: 2; padding: 8px 16px; background: var(--paper); }
+    .skip:focus { top: 16px; }
+    .page { width: min(100% - 64px, 1000px); margin-inline: auto; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 30px; border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 17px; font-weight: 700; letter-spacing: .2px; }
+    .brand svg { width: 28px; height: 28px; }
+    .brand span { color: var(--muted); font-size: 13px; font-weight: 400; padding-left: 12px; border-left: 1px solid var(--line); }
+    .source { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); text-decoration: none; }
+    .source:hover { color: var(--green); text-decoration: underline; }
+    .source svg { width: 15px; height: 15px; }
+    main { padding-block: 70px 78px; }
+    .eyebrow { margin: 0 0 13px; color: var(--green); font-size: 12px; font-weight: 700; letter-spacing: 2px; }
+    h1 { margin: 0; font-size: clamp(32px, 5vw, 46px); line-height: 1.25; letter-spacing: -1px; font-weight: 700; }
+    .intro { margin: 17px 0 45px; color: var(--muted); }
+    .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+    .section-heading h2 { margin: 0; font-size: 14px; font-weight: 600; }
+    .section-heading span { font-size: 12px; color: var(--muted); }
+    .portals { list-style: none; padding: 0; margin: 0; }
+    .portal { display: grid; grid-template-columns: 1fr 260px; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); text-decoration: none; transition: border-color .18s, box-shadow .18s; }
+    .portal:hover { border-color: #98b67e; box-shadow: 0 12px 32px #18241c0a; }
+    .portal-body { padding: 31px 34px 29px; }
+    .portal-label { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--green); letter-spacing: 1.4px; }
+    .number { color: var(--muted); font: 12px/1.5 ui-monospace, Consolas, monospace; }
+    h3 { margin: 18px 0 8px; font-size: 26px; line-height: 1.4; letter-spacing: -.4px; }
+    .description { margin: 0; max-width: 420px; color: var(--muted); font-size: 14px; }
+    .tags { display: flex; gap: 7px; flex-wrap: wrap; margin-block: 20px 25px; }
+    .tags span { border: 1px solid var(--line); border-radius: 6px; padding: 2px 9px; font-size: 11px; color: var(--muted); }
+    .portal-bottom { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .open { display: inline-flex; align-items: center; gap: 9px; color: var(--green); font-size: 13px; font-weight: 600; }
+    .open svg { width: 17px; height: 17px; transition: transform .18s; }
+    .portal:hover .open svg { transform: translateX(3px); }
+    .snapshot { color: var(--muted); font-size: 11px; }
+    .portal-art { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 20px; background: #eef4e6; border-left: 1px solid var(--line); }
+    .chip { width: 114px; height: 114px; color: var(--green); }
+    .stat { margin: 18px 0 0; display: flex; align-items: baseline; gap: 7px; }
+    .stat strong { font: 500 39px/1.1 ui-monospace, Consolas, monospace; letter-spacing: -2px; }
+    .stat span { font-size: 12px; color: var(--muted); }
+    .families { margin: 8px 0 0; font-size: 10px; color: var(--muted); letter-spacing: .5px; }
+    footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-block: 23px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+    footer a { text-decoration: none; }
+    footer a:hover { color: var(--green); text-decoration: underline; }
+    @media (max-width: 650px) {
+      .page { width: calc(100% - 36px); }
+      header { padding-block: 22px; }
+      main { padding-block: 44px 48px; }
+      .intro { margin-bottom: 30px; font-size: 14px; }
+      .portal { grid-template-columns: 1fr; }
+      .portal-body { padding: 25px 24px; }
+      .portal-art { flex-direction: row; justify-content: flex-start; gap: 20px; padding: 17px 24px; border-left: 0; border-top: 1px solid var(--line); }
+      .chip { width: 59px; height: 59px; flex-shrink: 0; }
+      .stat { margin: 0; }
+      .stat strong { font-size: 28px; }
+      h3 { font-size: 24px; }
+      .portal-bottom { align-items: flex-start; flex-direction: column; gap: 10px; }
+      footer { flex-wrap: wrap; gap: 6px 20px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">跳到主要内容</a>
+  <div class="page">
+    <header>
+      <div class="brand">
+        <svg aria-hidden="true" viewBox="0 0 28 28" fill="none"><rect x="1" y="1" width="11" height="11" rx="3" fill="#375e25"/><rect x="16" y="1" width="11" height="11" rx="3" fill="#cde99c"/><rect x="1" y="16" width="11" height="11" rx="3" fill="#cde99c"/><rect x="16" y="16" width="11" height="11" rx="3" fill="#375e25"/></svg>
+        MirDoch <span>导航</span>
+      </div>
+      <a class="source" href="https://github.com/MirDoch/MirDoch.github.io" target="_blank" rel="noopener noreferrer">GitHub <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 12 12 4M4 4h8v8"/></svg></a>
+    </header>
+    <main id="main">
+      <p class="eyebrow">MY WEB TOOLS</p>
+      <h1>网页导航</h1>
+      <p class="intro">把实用网页放在一起，打开即用。</p>
+      <nav aria-labelledby="portals-title">
+        <div class="section-heading"><h2 id="portals-title">工具门户</h2><span>01 个入口</span></div>
+        <ol class="portals">
+          <li>
+            <a class="portal" href="./gpu/" aria-labelledby="gpu-title" aria-describedby="gpu-description">
+              <div class="portal-body">
+                <div class="portal-label"><span class="number">01 /</span> HARDWARE</div>
+                <h3 id="gpu-title">GPU 对比</h3>
+                <p class="description" id="gpu-description">并排比较 NVIDIA 显卡的算力、显存与功耗，按精度查看参数、图表和能效排名。</p>
+                <div class="tags"><span>消费级 GeForce</span><span>工作站 RTX / RTX PRO</span><span>数据中心</span></div>
+                <div class="portal-bottom">
+                  <span class="open">打开对比工具 <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 10h13m-5-5 5 5-5 5"/></svg></span>
+                  <span class="snapshot">数据快照 <time id="gpu-snapshot" datetime="2026-10-03">2026-10-03</time></span>
+                </div>
+              </div>
+              <div class="portal-art" aria-hidden="true">
+                <svg class="chip" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="24" y="24" width="72" height="72" rx="12" fill="#e0edc9"/>
+                  <rect x="36" y="36" width="48" height="48" rx="5"/>
+                  <path d="M38 13v11m15-11v11m14-11v11m15-11v11M38 96v11m15-11v11m14-11v11m15-11v11M13 38h11M13 53h11M13 67h11M13 82h11M96 38h11M96 53h11M96 67h11M96 82h11"/>
+                  <path d="M47 66V54h7v12m6 0V48h7v18m6 0V57h0" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+                <div><p class="stat"><strong id="gpu-count">46</strong><span>款显卡</span></p><p class="families">GeForce · RTX PRO · Data Center</p></div>
+              </div>
+            </a>
+          </li>
+          <!-- 新增门户时，在此添加一个 li，并使用相对路径链接至新网页。 -->
+        </ol>
+      </nav>
+    </main>
+    <footer><span>MirDoch · 实用网页收藏</span><a href="https://github.com/MirDoch/MirDoch.github.io" target="_blank" rel="noopener noreferrer">查看源码 ↗</a></footer>
+  </div>
+</body>
+</html>

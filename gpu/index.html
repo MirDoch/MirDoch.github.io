@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NVIDIA 显卡算力与参数对比</title>
+<style>
+:root{
+  --bg:#0b0d10; --bg2:#111418; --bg3:#161b21; --line:#232b33; --line2:#2f3a45;
+  --fg:#eef3f8; --dim:#96a3b1; --dim2:#6c7a89;
+  --accent:#76b900; --accent-soft:rgba(118,185,0,.16); --accent-line:rgba(118,185,0,.45);
+  --best:#5fd700; --warn:#ffb020; --blue:#57a8ff; --purple:#b07dff;
+  --mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+  /* 需要在主题间切换的颜色 */
+  --header-bg:rgba(11,13,16,.92);
+  --row-head:#141a20;          /* 表头 */
+  --col-head:#12161b;          /* 左侧固定列 */
+  --thead-fg:#eef3f8;
+  --group-bg:#0f1317;          /* 分组行 */
+  --hover:#151b21;
+  --hover-param:#171e25;
+  --card-hover:#171d24;
+  --btn-hover:#1b2229;
+  --seg-on:#cff39a;
+  --chip-on:#cff39a;
+  --track:#0e1216;             /* 图表轨道 */
+  --track-line:#232b33;
+  --box-border:#4a5764;        /* 复选框 */
+  --grid-line:#1e252c;         /* 速览分隔虚线 */
+  --scroll:#2a333d;
+  --on-accent:#0d1105;         /* 强调色上的文字 */
+  --bar-from:#4d7d00; --bar-to:#8ede1a;
+  --bar-dc-from:#1c5fa8; --bar-dc-to:#4fa3ff;
+  --bar-ws-from:#6a3fb5; --bar-ws-to:#b07dff;
+  --shadow:rgba(0,0,0,.5);
+}
+html[data-theme="light"]{
+  --bg:#f4f6f8; --bg2:#ffffff; --bg3:#eef1f4; --line:#dde3e9; --line2:#c7d0d9;
+  --fg:#131a20; --dim:#5d6b78; --dim2:#8593a0;
+  --accent:#5d9200; --accent-soft:rgba(118,185,0,.14); --accent-line:rgba(93,146,0,.5);
+  --best:#2f7d00; --warn:#b26a00; --blue:#1668c9; --purple:#6d3fd0;
+  --header-bg:rgba(255,255,255,.94);
+  --row-head:#e9eef2;
+  --col-head:#f2f5f8;
+  --thead-fg:#131a20;
+  --group-bg:#eef2f6;
+  --hover:#e8eff6;
+  --hover-param:#e2ebf4;
+  --card-hover:#e9eef3;
+  --btn-hover:#e3e9ef;
+  --seg-on:#33530a;
+  --chip-on:#33530a;
+  --track:#e6ebf0;
+  --track-line:#cfd8e0;
+  --box-border:#9aa8b4;
+  --grid-line:#dfe5ea;
+  --scroll:#c3ccd5;
+  --on-accent:#ffffff;
+  --bar-from:#6aa300; --bar-to:#a6e02a;
+  --bar-dc-from:#2f7fd4; --bar-dc-to:#8cc4ff;
+  --bar-ws-from:#8a5fd0; --bar-ws-to:#c3a3ff;
+  --shadow:rgba(20,30,40,.18);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:14px/1.55 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:12.5px}
+
+/* ---------- header ---------- */
+header{position:sticky;top:0;z-index:60;background:var(--header-bg);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:10px 16px}
+.hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;letter-spacing:.2px}
+.eye{width:11px;height:11px;border-radius:3px;background:var(--accent);
+  box-shadow:0 0 0 4px var(--accent-soft)}
+.meta{color:var(--dim);font-size:12.5px}
+.spacer{flex:1 1 auto}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--dim);
+  border:1px solid var(--line2);border-radius:999px;padding:2px 9px;background:var(--bg3)}
+.badge b{color:var(--fg);font-weight:600}
+
+/* ---------- layout ---------- */
+.wrap{display:flex;align-items:flex-start;gap:0;min-height:calc(100vh - 55px)}
+aside{width:330px;flex:0 0 330px;border-right:1px solid var(--line);
+  position:sticky;top:55px;height:calc(100vh - 55px);display:flex;flex-direction:column;background:var(--bg2)}
+.aside-head{padding:12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:9px}
+.search{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--line2);
+  border-radius:8px;padding:7px 10px}
+.search input{flex:1;background:transparent;border:0;outline:0;color:var(--fg);font-size:13.5px}
+.search svg{flex:0 0 auto;opacity:.6}
+.filters{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line2);background:var(--bg3);color:var(--dim);border-radius:999px;
+  padding:3px 10px;font-size:12px;cursor:pointer;user-select:none}
+.chip:hover{color:var(--fg);border-color:var(--accent-line)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent-line);color:var(--chip-on)}
+.tools{display:flex;flex-wrap:wrap;gap:6px}
+.btn{border:1px solid var(--line2);background:var(--bg3);color:var(--fg);border-radius:7px;
+  padding:5px 10px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent-line);background:var(--btn-hover)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.count-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim)}
+.count-row input[type=range]{flex:1;accent-color:var(--accent)}
+.count-row .num{font-family:var(--mono);color:var(--fg);min-width:2.6em;text-align:right}
+.gpu-list{overflow:auto;padding:8px 8px 40px;flex:1 1 auto}
+.gpu-list::-webkit-scrollbar,.tablewrap::-webkit-scrollbar{width:10px;height:10px}
+.gpu-list::-webkit-scrollbar-thumb,.tablewrap::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:6px}
+.gpu-list::-webkit-scrollbar-track,.tablewrap::-webkit-scrollbar-track{background:transparent}
+.group-title{display:flex;align-items:center;gap:7px;font-size:11.5px;letter-spacing:.6px;
+  text-transform:uppercase;color:var(--dim2);margin:12px 6px 6px;cursor:pointer;user-select:none}
+.group-title .tri{transition:transform .15s;font-size:9px;display:inline-block}
+.group-title.closed .tri{transform:rotate(-90deg)}
+.group-title:hover{color:var(--fg)}
+.group-title .cnt{margin-left:auto;font-size:11px;color:var(--dim2);letter-spacing:0;text-transform:none}
+.group-title.level1{font-size:12px;color:var(--fg);margin:14px 6px 4px;letter-spacing:.4px}
+.group-title.level1 .lbl{font-weight:650}
+.group-title.level2{margin:6px 6px 4px 12px;padding-left:8px;border-left:2px solid var(--line2)}
+.group-title.level2 .lbl{color:var(--dim);letter-spacing:.2px;text-transform:none;font-size:12px}
+.group-body{padding-left:4px}
+.list-hint{font-size:11.5px;color:var(--dim2);padding:12px 10px 24px;line-height:1.5;border-top:1px solid var(--line);margin-top:12px}
+.gpu-card{display:flex;gap:9px;align-items:flex-start;padding:8px 9px;border-radius:9px;cursor:pointer;
+  border:1px solid transparent;margin-bottom:3px}
+.gpu-card:hover{background:var(--card-hover)}
+.gpu-card.on{background:var(--accent-soft);border-color:var(--accent-line)}
+.gpu-card .box{flex:0 0 auto;width:15px;height:15px;border-radius:4px;border:1.5px solid var(--box-border);margin-top:2px;
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--on-accent)}
+.gpu-card.on .box{background:var(--accent);border-color:var(--accent)}
+.gpu-card .info{min-width:0;flex:1}
+.gpu-card .n{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gpu-card .s{font-size:11.5px;color:var(--dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gpu-card .tag{display:inline-block;font-size:10px;padding:0 5px;border-radius:4px;margin-left:6px;
+  border:1px solid var(--line2);color:var(--dim);vertical-align:1px}
+.empty{padding:26px 16px;color:var(--dim2);text-align:center;font-size:12.5px}
+
+/* ---------- main ---------- */
+main{flex:1 1 auto;min-width:0;padding:14px 16px 60px;display:flex;flex-direction:column;gap:12px}
+.panel{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.panel-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 13px;
+  border-bottom:1px solid var(--line);background:var(--col-head)}
+.panel-head h2{margin:0;font-size:14px;font-weight:650;letter-spacing:.2px}
+.panel-head .sub{font-size:12px;color:var(--dim)}
+.panel-body{padding:12px 13px}
+.seg{display:flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.seg button{background:var(--bg3);color:var(--dim);border:0;padding:4px 11px;font-size:12.5px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line2)}
+.seg button.on{background:var(--accent-soft);color:var(--seg-on)}
+select{background:var(--bg3);color:var(--fg);border:1px solid var(--line2);border-radius:7px;
+  padding:5px 8px;font-size:13px;outline:0;max-width:100%}
+.hint{font-size:12px;color:var(--dim);margin:0 0 10px}
+
+/* ---------- compare table ---------- */
+.tablewrap{overflow:auto;max-height:none}
+table.cmp{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+table.cmp th,table.cmp td{padding:7px 10px;text-align:right;white-space:nowrap;vertical-align:middle}
+table.cmp thead th{position:sticky;top:0;z-index:5;background:var(--row-head);border-bottom:1px solid var(--line2);
+  font-weight:600;text-align:right;color:var(--thead-fg)}
+table.cmp thead th.param{left:0;z-index:8;text-align:left;min-width:168px;border-right:1px solid var(--line2)}
+table.cmp td.param,table.cmp th.param{position:sticky;left:0;z-index:4;background:var(--col-head);text-align:left;
+  border-right:1px solid var(--line2);color:var(--fg);font-weight:500}
+table.cmp tbody tr:hover td{background:var(--hover)}
+table.cmp tbody tr:hover td.param{background:var(--hover-param)}
+table.cmp tr.group th{background:var(--group-bg);color:var(--dim);font-size:11.5px;letter-spacing:.8px;
+  text-transform:uppercase;text-align:left;position:sticky;left:0;z-index:3;border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);padding:6px 10px}
+table.cmp td.best{color:var(--best);font-weight:700}
+table.cmp td.best::after{content:" ★";font-size:10px;color:var(--best)}
+table.cmp td.na{color:var(--dim2)}
+table.cmp .colhead{text-align:right}
+.colhead .nm{display:block;font-size:13px;font-weight:650}
+.colhead .arch{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:1px}
+.colhead .x{display:inline-block;margin-left:6px;color:var(--dim2);cursor:pointer;font-size:12px}
+.colhead .x:hover{color:#e05252}
+.precision{cursor:pointer;border-bottom:1px dotted var(--dim2)}
+.precision.on{color:var(--accent);border-bottom-color:var(--accent)}
+.precision:hover{color:var(--accent)}
+sup.est{color:var(--warn);font-size:10px;margin-left:1px;cursor:help}
+
+/* relative row */
+td.rel{font-family:var(--mono);font-size:12.5px}
+td.rel .bar{display:block;height:4px;border-radius:2px;background:var(--accent);opacity:.75;margin-top:4px}
+
+/* ---------- bars ---------- */
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar-row{display:grid;grid-template-columns:190px 1fr 96px;gap:10px;align-items:center}
+.bar-row .nm{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-row .nm i{color:var(--dim2);font-style:normal;font-size:11px}
+.bar-track{height:20px;background:var(--track);border:1px solid var(--track-line);border-radius:6px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--bar-from),var(--bar-to));border-radius:5px 0 0 5px;
+  transition:width .25s}
+.bar-fill.dc{background:linear-gradient(90deg,var(--bar-dc-from),var(--bar-dc-to))}
+.bar-fill.ws{background:linear-gradient(90deg,var(--bar-ws-from),var(--bar-ws-to))}
+.bar-val{font-family:var(--mono);font-size:12.5px;text-align:right;color:var(--fg)}
+.bar-val em{font-style:normal;color:var(--dim);font-size:11px;display:block}
+.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--dim2);margin-left:200px;
+  border-top:1px dashed var(--line2);padding-top:3px}
+
+/* ---------- mini compare ---------- */
+.mini{display:grid;gap:10px}
+.mini-card{background:var(--bg3);border:1px solid var(--line2);border-radius:10px;padding:10px 12px}
+.mini-card h3{margin:0 0 2px;font-size:13.5px}
+.mini-card .arch{font-size:11.5px;color:var(--dim);margin-bottom:8px}
+.kvs{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.kv{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--grid-line);padding-bottom:4px}
+.kv span{color:var(--dim);font-size:12px}
+.kv b{font-family:var(--mono);font-size:12.5px;font-weight:600}
+.kv b.win{color:var(--best)}
+.winner-tag{font-size:11px;color:var(--dim2);margin-top:8px}
+
+/* ---------- sources ---------- */
+.src-list{margin:0;padding-left:18px;font-size:12.5px;color:var(--dim)}
+.src-list li{margin:3px 0}
+details.note{font-size:12.5px;color:var(--dim)}
+details.note summary{cursor:pointer;color:var(--fg);font-size:13px;margin-bottom:6px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:10px}
+.legend i{display:inline-block;width:22px;height:8px;border-radius:2px;vertical-align:1px;margin-right:5px}
+.legend i.geforce{background:linear-gradient(90deg,var(--bar-from),var(--bar-to))}
+.legend i.ws{background:linear-gradient(90deg,var(--bar-ws-from),var(--bar-ws-to))}
+.legend i.dc{background:linear-gradient(90deg,var(--bar-dc-from),var(--bar-dc-to))}
+footer{color:var(--dim2);font-size:12px;padding:0 2px 30px}
+
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--bg3);border:1px solid var(--line2);color:var(--fg);border-radius:9px;padding:9px 16px;
+  font-size:13px;pointer-events:none;transition:opacity .18s,transform .18s;z-index:200;box-shadow:0 8px 30px var(--shadow)}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (max-width:1080px){
+  .wrap{flex-direction:column}
+  aside{position:relative;top:0;width:100%;flex:0 0 auto;height:auto;max-height:46vh;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:12px 12px 50px}
+  .bar-row{grid-template-columns:120px 1fr 88px}
+  .axis{margin-left:130px}
+}
+@media print{
+  aside,.panel-head .tools,.seg,header .tools{display:none}
+  body{background:#fff;color:#000}
+  .panel{border-color:#bbb}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <div class="brand"><span class="eye"></span>NVIDIA 显卡算力与参数对比</div>
+    <span class="badge">数据快照 <b id="snap"></b></span>
+    <span class="badge">型号 <b id="total"></b></span>
+    <span class="badge">已选 <b id="selcount">0</b></span>
+    <span class="badge" id="theme-badge">主题 <b id="theme-name">深色</b></span>
+    <span class="spacer"></span>
+    <div class="tools">
+      <button class="btn" id="btn-theme" title="切换白天 / 夜间模式">☀ 白天模式</button>
+      <button class="btn" id="btn-export">导出 CSV</button>
+      <button class="btn" id="btn-print">打印 / PDF</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside>
+    <div class="aside-head">
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5 14 14"></path></svg>
+        <input id="q" type="search" placeholder="搜索型号：5090 / 3080 / H200 / RTX PRO" autocomplete="off">
+      </div>
+      <div class="filters" id="cats"></div>
+      <div class="count-row">
+        <span>对比数量下限</span>
+        <input id="mincount" type="range" min="1" max="12" value="2" step="1">
+        <span class="num" id="mincount-v">2</span>
+      </div>
+      <div class="tools">
+        <button class="btn" data-preset="top">旗舰芯片</button>
+        <button class="btn" data-preset="ai">AI 推理</button>
+        <button class="btn" data-preset="dc">数据中心</button>
+        <button class="btn" data-preset="ge30">RTX 30 系</button>
+        <button class="btn" data-preset="clear">清空</button>
+      </div>
+    </div>
+    <div class="gpu-list" id="list"></div>
+  </aside>
+
+  <main>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>参数对比矩阵</h2>
+        <span class="sub" id="matrix-sub"></span>
+        <span class="spacer"></span>
+        <span class="sub" style="color:var(--warn)">†</span><span class="sub">= 按官方吞吐量换算的推算值</span>
+        <div class="seg" id="rel-toggle">
+          <button data-rel="max" class="on">相对最高</button>
+          <button data-rel="min">相对最低</button>
+        </div>
+      </div>
+      <div class="tablewrap" id="matrix"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>算力对比图表</h2>
+        <select id="precision"></select>
+        <div class="seg" id="density">
+          <button data-d="sparse">含稀疏</button>
+          <button data-d="dense" class="on">稠密</button>
+        </div>
+        <span class="spacer"></span>
+        <span class="sub" id="chart-sub"></span>
+      </div>
+      <div class="panel-body">
+        <p class="hint" id="chart-hint"></p>
+        <div class="bars" id="bars"></div>
+        <div class="axis"><span>0</span><span id="axis-mid"></span><span id="axis-max"></span></div>
+        <div class="legend">
+          <span><i class="lg geforce"></i>消费级 GeForce</span>
+          <span><i class="lg ws"></i>工作站 RTX PRO / RTX</span>
+          <span><i class="lg dc"></i>数据中心 H / B / A / L 系列</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>主要指标速览</h2><span class="sub">点击左侧卡片可增删，最多 4 张</span></div>
+      <div class="panel-body"><div class="mini" id="mini"></div></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>数据来源与口径</h2></div>
+      <div class="panel-body">
+        <details class="note" open>
+          <summary>官方来源清单（快照时抓取的页面）</summary>
+          <ul class="src-list" id="srclist"></ul>
+        </details>
+        <details class="note">
+          <summary>口径说明：稠密 / 稀疏、TFLOPS / TOPS、衍生值</summary>
+          <div id="caliber" style="margin-top:8px"></div>
+        </details>
+      </div>
+    </section>
+
+    <footer id="foot"></footer>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   NVIDIA 显卡算力与参数对比 —— 单文件应用
+   数据由 tools/build.js 内嵌（见 const EMBEDDED），
+   若同目录存在 data/gpu-data.json（通过 http 服务打开）则优先使用它。
+   ============================================================ */
+const EMBEDDED = {"generated":"2026-10-03","title":"NVIDIA 显卡算力与参数对比数据集","demo_count":3,"sources":[{"url":"https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/","title":"GeForce RTX 50 系列规格页","use":"NVIDIA 官方 RTX 50 系列规格页（CUDA 核心、AI TOPS、频率、显存、TGP）"},{"url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/","title":"GeForce 全系列规格对比页","use":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）"},{"url":"https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf","title":"RTX Blackwell GPU 架构白皮书（PDF）","use":"NVIDIA RTX Blackwell GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）"},{"url":"https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/","title":"GeForce RTX 40 系列规格页","use":"NVIDIA 官方 RTX 40 系列规格页"},{"url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf","title":"Ada GPU 架构白皮书（PDF）","use":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）"},{"url":"https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/","title":"GeForce RTX 30 系列规格页","use":"NVIDIA 官方 RTX 30 系列规格页"},{"url":"https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf","title":"NVIDIA Ampere GA102 GPU 架构白皮书（PDF）","use":"NVIDIA Ampere GA102 GPU 架构白皮书（附录 A/B：RTX 3090 / 3080 / 3070 逐精度表）"},{"url":"https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/quadro-product-literature/pdf/NVIDIA-RTX-Blackwell-PRO-GPU-Architecture-v1_1.pdf","title":"RTX PRO Blackwell GPU 架构白皮书（PDF）","use":"NVIDIA RTX PRO Blackwell GPU 架构白皮书（附录 A：A6000 / RTX 6000 Ada / RTX PRO 6000 全精度表）"},{"url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/","title":"RTX PRO 6000 Blackwell 产品页","use":"NVIDIA RTX PRO 6000 Blackwell 工作站版产品页规格表"},{"url":"https://www.nvidia.com/content/dam/en-zz/Solutions/data-center/rtx-pro-6000-blackwell-workstation-edition/workstation-blackwell-rtx-pro-6000-workstation-edition-nvidia-us-3519208-web.pdf","title":"RTX PRO 6000 Blackwell 工作站版数据表（PDF）","use":"NVIDIA RTX PRO 6000 Blackwell 工作站版官方数据表（PDF）"},{"url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000-max-q/","title":"RTX PRO 6000 Blackwell Max-Q 产品页","use":"NVIDIA RTX PRO 6000 Blackwell Max-Q 产品页规格表"},{"url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/","title":"RTX PRO 桌面 GPU 全系列对照表","use":"NVIDIA RTX PRO 桌面 GPU 全系列规格对照表（显存/功耗/板型）"},{"url":"https://www.nvidia.com/en-us/data-center/gb200-nvl72/","title":"NVIDIA GB200 NVL72 产品页规格表","use":"NVIDIA GB200 NVL72 产品页规格表（脚注：sparse 为稠密两倍）"},{"url":"https://www.nvidia.com/en-us/data-center/b200/","title":"NVIDIA B200 / HGX B200 产品页规格表","use":"NVIDIA HGX B200 / Blackwell 产品页规格表（标注 sparse | dense）"},{"url":"https://www.nvidia.com/en-us/data-center/h200/","title":"NVIDIA H200 产品页规格表","use":"NVIDIA H200 产品页规格表（脚注 *With sparsity）"},{"url":"https://www.nvidia.com/en-us/data-center/h100/","title":"NVIDIA H100 产品页规格表","use":"NVIDIA H100 产品页规格表"},{"url":"https://www.nvidia.com/en-us/data-center/a100/","title":"NVIDIA A100 产品页规格表","use":"NVIDIA A100 产品页规格表（稠密 | 稀疏*）"},{"url":"https://www.nvidia.com/en-us/data-center/l40s/","title":"NVIDIA L40S 产品页规格表","use":"NVIDIA L40S 产品页规格表"},{"url":"https://www.nvidia.com/en-us/data-center/l4/","title":"NVIDIA L4 产品页规格表","use":"NVIDIA L4 产品页规格表"},{"url":"https://www.nvidia.com/en-us/data-center/a40/","title":"NVIDIA A40 产品页规格表","use":"NVIDIA A40 产品页规格表"}],"caliber":["稠密（dense）/ 稀疏（sparse）：稀疏指 2:4 结构化稀疏，官方常用「稀疏值」做宣传口径；本页默认展示稠密值，可切换。","TFLOPS / TOPS：TFLOPS 为浮点每秒万亿次运算，TOPS 为整型；含稀疏的 FP4/FP8 数值最大，是各家「AI 算力」宣传时最常引用的口径。","消费级显卡的 Tensor 算力多由 NVIDIA 架构白皮书公布的「每 SM 每时钟吞吐量 × SM 数 × 加速频率」换算，属理论峰值，非实测。","数据中心产品的 FP64 分为向量（Vector）与 Tensor 两条路径，H100/H200/B200 的 FP64 峰值以官方数据表为准。","所有数值为厂商公布的理论峰值，实际性能受功耗墙、散热、驱动、软件栈与 batch 大小影响，不能直接等同于真实吞吐。"],"disclaimer":"数据来自 NVIDIA 官方产品页、数据表与架构白皮书（快照见「数据来源与口径」）。理论峰值仅供参考，实际算力受功耗、散热、软件与模型影响。","models":[{"id":"geforce-rtx-5090","name":"GeForce RTX 5090","short_name":"RTX 5090","tag":"旗舰","category":"geforce","series":"RTX 50 系列（Blackwell）","architecture":"Blackwell","codename":"GB202","process":"TSMC 4nm 4N","release_date":"2025-01","cuda_cores":21760,"tensor_cores":680,"rt_cores":680,"sm_count":170,"base_clock_mhz":2010,"boost_clock_mhz":2407,"fp32_tflops_dense":104.8,"fp64_tflops_dense":1.6,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp4":1676,"fp8":838,"fp16":419,"bf16":419,"tf32":209.5,"int8":838},"tensor_sparse_tflops":{"fp4":3352,"fp8":1676,"fp16":838,"bf16":838,"tf32":419,"int8":1676},"derived":["fp32_tflops_dense","fp64_tflops_dense"],"ai_tops_official":3352,"ai_tops_precision":"FP4（稀疏）","memory_size_gb":32,"memory_type":"GDDR7","memory_bus_width_bit":512,"memory_bandwidth_gbs":1792,"max_power_w":575,"recommended_psu_w":1000,"power_connector":"1x 600W PCIe Gen 5（12V-2x6），或 4x PCIe 8-pin 转接","slot_width":3,"length_mm":304,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"FP4 为 Blackwell 新增；白皮书附录 A 给出全部精度稠密/稀疏峰值","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 50 系列规格页（CUDA 核心、AI TOPS、频率、显存、TGP）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA RTX Blackwell GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf"}],"flagship":true,"tags":["ai","game","top"],"tensor_sparse_tops":null,"order":0},{"id":"geforce-rtx-5080","name":"GeForce RTX 5080","short_name":"RTX 5080","tag":"次旗舰","category":"geforce","series":"RTX 50 系列（Blackwell）","architecture":"Blackwell","codename":"GB203","process":"TSMC 4nm 4N","release_date":"2025-01","cuda_cores":10752,"tensor_cores":336,"rt_cores":336,"sm_count":84,"base_clock_mhz":2300,"boost_clock_mhz":2617,"fp32_tflops_dense":56.3,"fp64_tflops_dense":0.9,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp4":900.4,"fp8":450.2,"fp16":225.1,"bf16":225.1,"tf32":112.6,"int8":450.2},"tensor_sparse_tflops":{"fp4":1801,"fp8":900.4,"fp16":450.2,"bf16":450.2,"tf32":225.1,"int8":900.4},"derived":["fp32_tflops_dense","fp64_tflops_dense"],"ai_tops_official":1801,"ai_tops_precision":"FP4（稀疏）","memory_size_gb":16,"memory_type":"GDDR7","memory_bus_width_bit":256,"memory_bandwidth_gbs":960,"max_power_w":360,"recommended_psu_w":850,"power_connector":"1x 600W PCIe Gen 5（12V-2x6），或 3x PCIe 8-pin 转接","slot_width":2,"length_mm":304,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 50 系列规格页（CUDA 核心、AI TOPS、频率、显存、TGP）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA RTX Blackwell GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf"}],"flagship":true,"tags":["ai","game"],"tensor_sparse_tops":null,"order":1},{"id":"geforce-rtx-5070-ti","name":"GeForce RTX 5070 Ti","short_name":"RTX 5070 Ti","tag":"高端","category":"geforce","series":"RTX 50 系列（Blackwell）","architecture":"Blackwell","codename":"GB203","process":"TSMC 4nm 4N","release_date":"2025-02","cuda_cores":8960,"tensor_cores":280,"rt_cores":280,"sm_count":70,"base_clock_mhz":2300,"boost_clock_mhz":2450,"fp32_tflops_dense":43.9,"fp64_tflops_dense":0.7,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp4":703,"fp8":351.5,"fp16":175.8,"bf16":175.8,"tf32":87.9,"int8":351.5},"tensor_sparse_tflops":{"fp4":1406,"fp8":703,"fp16":351.5,"bf16":351.5,"tf32":175.8,"int8":703},"derived":["fp32_tflops_dense","fp64_tflops_dense"],"ai_tops_official":1406,"ai_tops_precision":"FP4（稀疏）","memory_size_gb":16,"memory_type":"GDDR7","memory_bus_width_bit":256,"memory_bandwidth_gbs":896,"max_power_w":300,"recommended_psu_w":750,"power_connector":"1x 300W+ PCIe Gen 5，或 2x PCIe 8-pin","slot_width":2,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 50 系列规格页（CUDA 核心、AI TOPS、频率、显存、TGP）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA RTX Blackwell GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf"}],"flagship":true,"tags":["ai","game"],"tensor_sparse_tops":null,"order":2},{"id":"geforce-rtx-5070","name":"GeForce RTX 5070","short_name":"RTX 5070","tag":"高端","category":"geforce","series":"RTX 50 系列（Blackwell）","architecture":"Blackwell","codename":"GB205","process":"TSMC 4nm 4N","release_date":"2025-03","cuda_cores":6144,"tensor_cores":192,"rt_cores":192,"sm_count":48,"base_clock_mhz":2330,"boost_clock_mhz":2510,"fp32_tflops_dense":30.9,"fp64_tflops_dense":0.5,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp4":493.9,"fp8":246.9,"fp16":123.5,"bf16":123.5,"tf32":61.7,"int8":246.9},"tensor_sparse_tflops":{"fp4":987.8,"fp8":493.9,"fp16":246.9,"bf16":246.9,"tf32":123.5,"int8":493.9},"derived":["fp32_tflops_dense","fp64_tflops_dense"],"ai_tops_official":988,"ai_tops_precision":"FP4（稀疏）","memory_size_gb":12,"memory_type":"GDDR7","memory_bus_width_bit":192,"memory_bandwidth_gbs":672,"max_power_w":250,"recommended_psu_w":650,"power_connector":"1x 300W+ PCIe Gen 5，或 2x PCIe 8-pin","slot_width":2,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 50 系列规格页（CUDA 核心、AI TOPS、频率、显存、TGP）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA RTX Blackwell GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf"}],"flagship":true,"tags":["game"],"tensor_sparse_tops":null,"order":3},{"id":"geforce-rtx-5060-ti","name":"GeForce RTX 5060 Ti","short_name":"RTX 5060 Ti","tag":"主流","category":"geforce","series":"RTX 50 系列（Blackwell）","architecture":"Blackwell","codename":"GB206","process":"TSMC 4nm 4N","release_date":"2025-04","cuda_cores":4608,"tensor_cores":144,"rt_cores":144,"sm_count":36,"base_clock_mhz":2410,"boost_clock_mhz":2570,"fp32_tflops_dense":23.7,"fp64_tflops_dense":0.4,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp4":189.5,"fp8":94.7,"fp16":47.4,"bf16":47.4,"tf32":23.7,"int8":94.7},"tensor_sparse_tflops":{"fp4":379,"fp8":189.4,"fp16":94.8,"bf16":94.8,"tf32":47.4,"int8":189.4},"derived":["fp32_tflops_dense","fp64_tflops_dense"],"ai_tops_official":759,"ai_tops_precision":"FP4（稀疏）","memory_size_gb":16,"memory_type":"GDDR7","memory_bus_width_bit":128,"memory_bandwidth_gbs":448,"max_power_w":180,"recommended_psu_w":600,"power_connector":"1x PCIe 8-pin，或 300W+ PCIe Gen 5","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"官方规格页列出 759 AI TOPS（FP4 稀疏）；各精度峰值按 Blackwell 每 SM 每时钟吞吐量换算（†）","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 50 系列规格页（CUDA 核心、AI TOPS、频率、显存、TGP）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA RTX Blackwell GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf"}],"flagship":false,"tags":["game"],"tensor_sparse_tops":null,"order":4},{"id":"geforce-rtx-5060","name":"GeForce RTX 5060","short_name":"RTX 5060","tag":"主流","category":"geforce","series":"RTX 50 系列（Blackwell）","architecture":"Blackwell","codename":"GB206","process":"TSMC 4nm 4N","release_date":"2025-05","cuda_cores":3840,"tensor_cores":120,"rt_cores":120,"sm_count":30,"base_clock_mhz":2280,"boost_clock_mhz":2500,"fp32_tflops_dense":19.2,"fp64_tflops_dense":0.3,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp4":153.6,"fp8":76.8,"fp16":38.4,"bf16":38.4,"tf32":19.2,"int8":76.8},"tensor_sparse_tflops":{"fp4":307.2,"fp8":153.6,"fp16":76.8,"bf16":76.8,"tf32":38.4,"int8":153.6},"derived":["fp32_tflops_dense","fp64_tflops_dense"],"ai_tops_official":614,"ai_tops_precision":"FP4（稀疏）","memory_size_gb":8,"memory_type":"GDDR7","memory_bus_width_bit":128,"memory_bandwidth_gbs":448,"max_power_w":145,"recommended_psu_w":550,"power_connector":"1x PCIe 8-pin，或 300W+ PCIe Gen 5","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"官方规格页列出 614 AI TOPS（FP4 稀疏）；各精度峰值按 Blackwell 每 SM 每时钟吞吐量换算（†）","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 50 系列规格页（CUDA 核心、AI TOPS、频率、显存、TGP）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA RTX Blackwell GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf"}],"flagship":false,"tags":["game"],"tensor_sparse_tops":null,"order":5},{"id":"geforce-rtx-4090","name":"GeForce RTX 4090","short_name":"RTX 4090","tag":"上代旗舰","category":"geforce","series":"RTX 40 系列（Ada Lovelace）","architecture":"Ada Lovelace","codename":"AD102","process":"TSMC 4nm 4N","release_date":"2022-10","cuda_cores":16384,"tensor_cores":512,"rt_cores":512,"sm_count":128,"base_clock_mhz":2230,"boost_clock_mhz":2520,"fp32_tflops_dense":82.6,"fp64_tflops_dense":1.3,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp8":660.6,"fp16":330.3,"bf16":330.3,"tf32":165.2,"int8":660.6},"tensor_sparse_tflops":{"fp8":1321.2,"fp16":660.6,"bf16":660.6,"tf32":330.4,"int8":1321.2},"derived":["fp32_tflops_dense","fp64_tflops_dense"],"ai_tops_official":1321,"ai_tops_precision":"FP8（稀疏）","memory_size_gb":24,"memory_type":"GDDR6X","memory_bus_width_bit":384,"memory_bandwidth_gbs":1008,"max_power_w":450,"recommended_psu_w":850,"power_connector":"1x 600W PCIe Gen 5，或 4x PCIe 8-pin","slot_width":3,"length_mm":304,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"FP8 为 Ada 第 4 代 Tensor Core 新增精度；白皮书附录 A 给出全部精度稠密/稀疏峰值","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 40 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":true,"tags":["ai","game"],"tensor_sparse_tops":null,"order":6},{"id":"geforce-rtx-4080-super","name":"GeForce RTX 4080 SUPER","short_name":"RTX 4080 SUPER","tag":"上代","category":"geforce","series":"RTX 40 系列（Ada Lovelace）","architecture":"Ada Lovelace","codename":"AD103","process":"TSMC 4nm 4N","release_date":"2024-01","cuda_cores":10240,"tensor_cores":320,"rt_cores":320,"sm_count":80,"base_clock_mhz":2290,"boost_clock_mhz":2550,"fp32_tflops_dense":52.2,"fp64_tflops_dense":0.8,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp8":208.9,"fp16":104.4,"bf16":104.4,"tf32":52.2,"int8":208.9},"tensor_sparse_tflops":{"fp8":417.8,"fp16":208.8,"bf16":208.8,"tf32":104.4,"int8":417.8},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":836,"ai_tops_precision":"FP8（稀疏）","memory_size_gb":16,"memory_type":"GDDR6X","memory_bus_width_bit":256,"memory_bandwidth_gbs":736,"max_power_w":320,"recommended_psu_w":750,"power_connector":"1x 450W+ PCIe Gen 5，或 3x PCIe 8-pin","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"官方对比页给出 836 AI TOPS（FP8 稀疏）；白皮书未列 AD103 的逐精度表，按 Ada 每 SM 每时钟吞吐量换算（†）","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 40 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":false,"tags":["ai","game"],"tensor_sparse_tops":null,"order":7},{"id":"geforce-rtx-4080","name":"GeForce RTX 4080","short_name":"RTX 4080","tag":"上代","category":"geforce","series":"RTX 40 系列（Ada Lovelace）","architecture":"Ada Lovelace","codename":"AD103","process":"TSMC 4nm 4N","release_date":"2022-11","cuda_cores":9728,"tensor_cores":304,"rt_cores":304,"sm_count":76,"base_clock_mhz":2210,"boost_clock_mhz":2510,"fp32_tflops_dense":48.8,"fp64_tflops_dense":0.8,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp8":195.3,"fp16":97.7,"bf16":97.7,"tf32":48.8,"int8":195.3},"tensor_sparse_tflops":{"fp8":390.6,"fp16":195.4,"bf16":195.4,"tf32":97.6,"int8":390.6},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":780,"ai_tops_precision":"FP8（稀疏）","memory_size_gb":16,"memory_type":"GDDR6X","memory_bus_width_bit":256,"memory_bandwidth_gbs":717,"max_power_w":320,"recommended_psu_w":750,"power_connector":"1x 450W+ PCIe Gen 5，或 3x PCIe 8-pin","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"AI TOPS 与各精度算力按官方对比页数据 + Ada 每 SM 每时钟吞吐量换算（†）","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 40 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":false,"tags":["game"],"tensor_sparse_tops":null,"order":8},{"id":"geforce-rtx-4070-ti-super","name":"GeForce RTX 4070 Ti SUPER","short_name":"RTX 4070 Ti SUPER","tag":"上代","category":"geforce","series":"RTX 40 系列（Ada Lovelace）","architecture":"Ada Lovelace","codename":"AD103","process":"TSMC 4nm 4N","release_date":"2024-01","cuda_cores":8448,"tensor_cores":264,"rt_cores":264,"sm_count":66,"base_clock_mhz":2340,"boost_clock_mhz":2610,"fp32_tflops_dense":44.1,"fp64_tflops_dense":0.7,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp8":176.4,"fp16":88.2,"bf16":88.2,"tf32":44.1,"int8":176.4},"tensor_sparse_tflops":{"fp8":352.8,"fp16":176.4,"bf16":176.4,"tf32":88.2,"int8":352.8},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":706,"ai_tops_precision":"FP8（稀疏）","memory_size_gb":16,"memory_type":"GDDR6X","memory_bus_width_bit":256,"memory_bandwidth_gbs":672,"max_power_w":285,"recommended_psu_w":700,"power_connector":"1x 300W+ PCIe Gen 5，或 2x PCIe 8-pin","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 40 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":false,"tags":["ai"],"tensor_sparse_tops":null,"order":9},{"id":"geforce-rtx-4070-ti","name":"GeForce RTX 4070 Ti","short_name":"RTX 4070 Ti","tag":"上代","category":"geforce","series":"RTX 40 系列（Ada Lovelace）","architecture":"Ada Lovelace","codename":"AD104","process":"TSMC 4nm 4N","release_date":"2023-01","cuda_cores":7680,"tensor_cores":240,"rt_cores":240,"sm_count":60,"base_clock_mhz":2310,"boost_clock_mhz":2610,"fp32_tflops_dense":40.1,"fp64_tflops_dense":0.6,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp8":160.4,"fp16":80.2,"bf16":80.2,"tf32":40.1,"int8":160.4},"tensor_sparse_tflops":{"fp8":320.8,"fp16":160.4,"bf16":160.4,"tf32":80.2,"int8":320.8},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":641,"ai_tops_precision":"FP8（稀疏）","memory_size_gb":12,"memory_type":"GDDR6X","memory_bus_width_bit":192,"memory_bandwidth_gbs":504,"max_power_w":285,"recommended_psu_w":700,"power_connector":"1x 300W+ PCIe Gen 5，或 2x PCIe 8-pin","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 40 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":false,"tags":["game"],"tensor_sparse_tops":null,"order":10},{"id":"geforce-rtx-4070-super","name":"GeForce RTX 4070 SUPER","short_name":"RTX 4070 SUPER","tag":"上代","category":"geforce","series":"RTX 40 系列（Ada Lovelace）","architecture":"Ada Lovelace","codename":"AD104","process":"TSMC 4nm 4N","release_date":"2024-01","cuda_cores":7168,"tensor_cores":224,"rt_cores":224,"sm_count":56,"base_clock_mhz":1980,"boost_clock_mhz":2480,"fp32_tflops_dense":35.5,"fp64_tflops_dense":0.6,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp8":142.2,"fp16":71.1,"bf16":71.1,"tf32":35.6,"int8":142.2},"tensor_sparse_tflops":{"fp8":284.4,"fp16":142.2,"bf16":142.2,"tf32":71.2,"int8":284.4},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":568,"ai_tops_precision":"FP8（稀疏）","memory_size_gb":12,"memory_type":"GDDR6X","memory_bus_width_bit":192,"memory_bandwidth_gbs":504,"max_power_w":220,"recommended_psu_w":650,"power_connector":"1x 300W+ PCIe Gen 5，或 2x PCIe 8-pin","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 40 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":false,"tags":["ai","game"],"tensor_sparse_tops":null,"order":11},{"id":"geforce-rtx-4070","name":"GeForce RTX 4070","short_name":"RTX 4070","tag":"上代","category":"geforce","series":"RTX 40 系列（Ada Lovelace）","architecture":"Ada Lovelace","codename":"AD104","process":"TSMC 4nm 4N","release_date":"2023-04","cuda_cores":5888,"tensor_cores":184,"rt_cores":184,"sm_count":46,"base_clock_mhz":1920,"boost_clock_mhz":2480,"fp32_tflops_dense":29.2,"fp64_tflops_dense":0.5,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp8":116.8,"fp16":58.4,"bf16":58.4,"tf32":29.2,"int8":116.8},"tensor_sparse_tflops":{"fp8":233.6,"fp16":116.8,"bf16":116.8,"tf32":58.4,"int8":233.6},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":466,"ai_tops_precision":"FP8（稀疏）","memory_size_gb":12,"memory_type":"GDDR6X","memory_bus_width_bit":192,"memory_bandwidth_gbs":504,"max_power_w":200,"recommended_psu_w":650,"power_connector":"1x 300W+ PCIe Gen 5，或 2x PCIe 8-pin","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 40 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":false,"tags":["game"],"tensor_sparse_tops":null,"order":12},{"id":"geforce-rtx-4060-ti","name":"GeForce RTX 4060 Ti","short_name":"RTX 4060 Ti","tag":"上代入门","category":"geforce","series":"RTX 40 系列（Ada Lovelace）","architecture":"Ada Lovelace","codename":"AD106","process":"TSMC 4nm 4N","release_date":"2023-05","cuda_cores":4352,"tensor_cores":136,"rt_cores":136,"sm_count":34,"base_clock_mhz":2310,"boost_clock_mhz":2540,"fp32_tflops_dense":22.1,"fp64_tflops_dense":0.3,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp8":88.4,"fp16":44.2,"bf16":44.2,"tf32":22.1,"int8":88.4},"tensor_sparse_tflops":{"fp8":176.8,"fp16":88.4,"bf16":88.4,"tf32":44.2,"int8":176.8},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":353,"ai_tops_precision":"FP8（稀疏）","memory_size_gb":8,"memory_type":"GDDR6","memory_bus_width_bit":128,"memory_bandwidth_gbs":288,"max_power_w":160,"recommended_psu_w":550,"power_connector":"1x PCIe 8-pin","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"另有 16GB 版本，位宽同为 128-bit","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 40 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":false,"tags":["game"],"tensor_sparse_tops":null,"order":13},{"id":"geforce-rtx-4060","name":"GeForce RTX 4060","short_name":"RTX 4060","tag":"上代入门","category":"geforce","series":"RTX 40 系列（Ada Lovelace）","architecture":"Ada Lovelace","codename":"AD107","process":"TSMC 4nm 4N","release_date":"2023-06","cuda_cores":3072,"tensor_cores":96,"rt_cores":96,"sm_count":24,"base_clock_mhz":1830,"boost_clock_mhz":2460,"fp32_tflops_dense":15.1,"fp64_tflops_dense":0.2,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp8":60.5,"fp16":30.2,"bf16":30.2,"tf32":15.1,"int8":60.5},"tensor_sparse_tflops":{"fp8":121,"fp16":60.4,"bf16":60.4,"tf32":30.2,"int8":121},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":242,"ai_tops_precision":"FP8（稀疏）","memory_size_gb":8,"memory_type":"GDDR6","memory_bus_width_bit":128,"memory_bandwidth_gbs":272,"max_power_w":115,"recommended_psu_w":550,"power_connector":"1x PCIe 8-pin","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 40 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/"},{"kind":"spec","note":"NVIDIA 官方显卡规格对比页（全系列 AI TOPS / 频率）","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":false,"tags":["game"],"tensor_sparse_tops":null,"order":14},{"id":"geforce-rtx-3090-ti","name":"GeForce RTX 3090 Ti","short_name":"RTX 3090 Ti","tag":"30 系旗舰","category":"geforce","series":"RTX 30 系列（Ampere）","architecture":"Ampere","codename":"GA102","process":"Samsung 8nm 8N","release_date":"2022-03","cuda_cores":10752,"tensor_cores":336,"rt_cores":336,"sm_count":84,"base_clock_mhz":1560,"boost_clock_mhz":1860,"fp32_tflops_dense":40,"fp64_tflops_dense":0.6,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":80,"bf16":80,"tf32":40,"int8":160},"tensor_sparse_tflops":{"fp16":160,"bf16":160,"tf32":80,"int8":320},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops","memory_bandwidth_gbs"],"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":24,"memory_type":"GDDR6X","memory_bus_width_bit":384,"memory_bandwidth_gbs":1008,"max_power_w":450,"recommended_psu_w":850,"power_connector":"3x PCIe 8-pin，或 450W+ PCIe Gen 5","slot_width":3,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"Ampere 第 3 代 Tensor Core，不支持 FP8/FP4；显存带宽按官方位宽 384-bit × 21 Gbps 换算（†）","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 30 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/"},{"kind":"spec","note":"NVIDIA 官方规格对比页中的 RTX 30 系列规格表","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ampere GA102 GPU 架构白皮书（附录 A/B：RTX 3090 / 3080 / 3070 逐精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf"}],"tags":[],"tensor_sparse_tops":null,"order":15},{"id":"geforce-rtx-3090","name":"GeForce RTX 3090","short_name":"RTX 3090","tag":"30 系旗舰","category":"geforce","series":"RTX 30 系列（Ampere）","architecture":"Ampere","codename":"GA102","process":"Samsung 8nm 8N","release_date":"2020-09","cuda_cores":10496,"tensor_cores":328,"rt_cores":328,"sm_count":82,"base_clock_mhz":1400,"boost_clock_mhz":1695,"fp32_tflops_dense":35.6,"fp64_tflops_dense":0.6,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":142,"bf16":71,"tf32":35.6,"int8":284},"tensor_sparse_tflops":{"fp16":284,"bf16":142,"tf32":71,"int8":568},"derived":["fp64_tflops_dense"],"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":24,"memory_type":"GDDR6X","memory_bus_width_bit":384,"memory_bandwidth_gbs":936,"max_power_w":350,"recommended_psu_w":750,"power_connector":"2x PCIe 8-pin（附 12-pin 转接线）","slot_width":3,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"官方 Ampere 白皮书附录 A：FP32 35.6、FP16 Tensor 142/284、BF16 71/142、TF32 35.6/71、INT8 284/568，24GB GDDR6X 936 GB/s、350W","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 30 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/"},{"kind":"spec","note":"NVIDIA 官方规格对比页中的 RTX 30 系列规格表","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ampere GA102 GPU 架构白皮书（附录 A/B：RTX 3090 / 3080 / 3070 逐精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf"}],"tags":[],"tensor_sparse_tops":null,"order":16},{"id":"geforce-rtx-3080-ti","name":"GeForce RTX 3080 Ti","short_name":"RTX 3080 Ti","tag":"30 系高端","category":"geforce","series":"RTX 30 系列（Ampere）","architecture":"Ampere","codename":"GA102","process":"Samsung 8nm 8N","release_date":"2021-06","cuda_cores":10240,"tensor_cores":320,"rt_cores":320,"sm_count":80,"base_clock_mhz":1370,"boost_clock_mhz":1670,"fp32_tflops_dense":34.2,"fp64_tflops_dense":0.5,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":68.4,"bf16":68.4,"tf32":34.2,"int8":136.8},"tensor_sparse_tflops":{"fp16":136.8,"bf16":136.8,"tf32":68.4,"int8":273.6},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops","memory_bandwidth_gbs"],"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":12,"memory_type":"GDDR6X","memory_bus_width_bit":384,"memory_bandwidth_gbs":912,"max_power_w":350,"recommended_psu_w":750,"power_connector":"2x PCIe 8-pin（附 12-pin 转接线）","slot_width":2,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"显存带宽按官方位宽 384-bit × 19 Gbps 换算（†）","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 30 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/"},{"kind":"spec","note":"NVIDIA 官方规格对比页中的 RTX 30 系列规格表","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ampere GA102 GPU 架构白皮书（附录 A/B：RTX 3090 / 3080 / 3070 逐精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf"}],"tags":[],"tensor_sparse_tops":null,"order":17},{"id":"geforce-rtx-3080","name":"GeForce RTX 3080","short_name":"RTX 3080","tag":"30 系高端","category":"geforce","series":"RTX 30 系列（Ampere）","architecture":"Ampere","codename":"GA102","process":"Samsung 8nm 8N","release_date":"2020-09","cuda_cores":8960,"tensor_cores":280,"rt_cores":280,"sm_count":70,"base_clock_mhz":1440,"boost_clock_mhz":1710,"fp32_tflops_dense":30.6,"fp64_tflops_dense":0.5,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":119,"bf16":59.5,"tf32":29.8,"int8":238},"tensor_sparse_tflops":{"fp16":238,"bf16":119,"tf32":59.5,"int8":476},"derived":["fp32_tflops_dense","fp64_tflops_dense"],"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":10,"memory_type":"GDDR6X","memory_bus_width_bit":320,"memory_bandwidth_gbs":760,"max_power_w":320,"recommended_psu_w":750,"power_connector":"2x PCIe 8-pin（附 12-pin 转接线）","slot_width":2,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"官方 Ampere 白皮书：FP16 Tensor 119/238、BF16 59.5/119、TF32 29.8/59.5、INT8 238/476；10GB GDDR6X 760 GB/s。官方对比页另有 12GB / 8960 核版本","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 30 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/"},{"kind":"spec","note":"NVIDIA 官方规格对比页中的 RTX 30 系列规格表","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ampere GA102 GPU 架构白皮书（附录 A/B：RTX 3090 / 3080 / 3070 逐精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf"}],"tags":[],"tensor_sparse_tops":null,"order":18},{"id":"geforce-rtx-3070-ti","name":"GeForce RTX 3070 Ti","short_name":"RTX 3070 Ti","tag":"30 系中高端","category":"geforce","series":"RTX 30 系列（Ampere）","architecture":"Ampere","codename":"GA104","process":"Samsung 8nm 8N","release_date":"2021-06","cuda_cores":6144,"tensor_cores":192,"rt_cores":192,"sm_count":48,"base_clock_mhz":1580,"boost_clock_mhz":1770,"fp32_tflops_dense":21.7,"fp64_tflops_dense":0.3,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":43.5,"bf16":43.5,"tf32":21.7,"int8":87},"tensor_sparse_tflops":{"fp16":87,"bf16":87,"tf32":43.4,"int8":174},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops","memory_bandwidth_gbs"],"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":8,"memory_type":"GDDR6X","memory_bus_width_bit":256,"memory_bandwidth_gbs":608,"max_power_w":290,"recommended_psu_w":750,"power_connector":"2x PCIe 8-pin（附 12-pin 转接线）","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"唯一采用 GDDR6X 的 70 Ti；带宽按 256-bit × 19 Gbps 换算（†）","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 30 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/"},{"kind":"spec","note":"NVIDIA 官方规格对比页中的 RTX 30 系列规格表","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ampere GA102 GPU 架构白皮书（附录 A/B：RTX 3090 / 3080 / 3070 逐精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf"}],"tags":[],"tensor_sparse_tops":null,"order":19},{"id":"geforce-rtx-3070","name":"GeForce RTX 3070","short_name":"RTX 3070","tag":"30 系中端","category":"geforce","series":"RTX 30 系列（Ampere）","architecture":"Ampere","codename":"GA104","process":"Samsung 8nm 8N","release_date":"2020-10","cuda_cores":5888,"tensor_cores":184,"rt_cores":184,"sm_count":46,"base_clock_mhz":1500,"boost_clock_mhz":1725,"fp32_tflops_dense":20.3,"fp64_tflops_dense":0.3,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":81.3,"bf16":40.6,"tf32":20.3,"int8":162.6},"tensor_sparse_tflops":{"fp16":162.6,"bf16":81.3,"tf32":40.6,"int8":325.2},"derived":["fp32_tflops_dense","fp64_tflops_dense"],"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":8,"memory_type":"GDDR6","memory_bus_width_bit":256,"memory_bandwidth_gbs":448,"max_power_w":220,"recommended_psu_w":650,"power_connector":"1x PCIe 8-pin（附 12-pin 转接线）","slot_width":2,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"官方 Ampere 白皮书附录 A：FP16 Tensor 81.3/162.6、BF16 40.6/81.3、TF32 20.3/40.6、INT8 162.6/325.2，8GB GDDR6 448 GB/s、220W","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 30 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/"},{"kind":"spec","note":"NVIDIA 官方规格对比页中的 RTX 30 系列规格表","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ampere GA102 GPU 架构白皮书（附录 A/B：RTX 3090 / 3080 / 3070 逐精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf"}],"tags":[],"tensor_sparse_tops":null,"order":20},{"id":"geforce-rtx-3060-ti","name":"GeForce RTX 3060 Ti","short_name":"RTX 3060 Ti","tag":"30 系甜点","category":"geforce","series":"RTX 30 系列（Ampere）","architecture":"Ampere","codename":"GA104","process":"Samsung 8nm 8N","release_date":"2020-12","cuda_cores":4864,"tensor_cores":152,"rt_cores":152,"sm_count":38,"base_clock_mhz":1410,"boost_clock_mhz":1665,"fp32_tflops_dense":16.2,"fp64_tflops_dense":0.3,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":32.4,"bf16":32.4,"tf32":16.2,"int8":64.8},"tensor_sparse_tflops":{"fp16":64.8,"bf16":64.8,"tf32":32.4,"int8":129.6},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":8,"memory_type":"GDDR6 / GDDR6X","memory_bus_width_bit":256,"memory_bandwidth_gbs":448,"max_power_w":200,"recommended_psu_w":600,"power_connector":"1x PCIe 8-pin","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"官方对比页标注 GDDR6 / GDDR6X 两种版本，带宽按 256-bit × 14 Gbps = 448 GB/s；后期 GDDR6X 版本带宽更高","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 30 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/"},{"kind":"spec","note":"NVIDIA 官方规格对比页中的 RTX 30 系列规格表","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ampere GA102 GPU 架构白皮书（附录 A/B：RTX 3090 / 3080 / 3070 逐精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf"}],"tags":[],"tensor_sparse_tops":null,"order":21},{"id":"geforce-rtx-3060","name":"GeForce RTX 3060","short_name":"RTX 3060","tag":"30 系主流","category":"geforce","series":"RTX 30 系列（Ampere）","architecture":"Ampere","codename":"GA106","process":"Samsung 8nm 8N","release_date":"2021-02","cuda_cores":3584,"tensor_cores":112,"rt_cores":112,"sm_count":28,"base_clock_mhz":1320,"boost_clock_mhz":1780,"fp32_tflops_dense":12.7,"fp64_tflops_dense":0.2,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":25.5,"bf16":25.5,"tf32":12.8,"int8":51},"tensor_sparse_tflops":{"fp16":51,"bf16":51,"tf32":25.6,"int8":102},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":12,"memory_type":"GDDR6","memory_bus_width_bit":192,"memory_bandwidth_gbs":360,"max_power_w":170,"recommended_psu_w":550,"power_connector":"1x PCIe 8-pin","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"12GB GDDR6（另有 8GB 版本，位宽同为 192-bit）；带宽按 192-bit × 15 Gbps 换算（†）","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 30 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/"},{"kind":"spec","note":"NVIDIA 官方规格对比页中的 RTX 30 系列规格表","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ampere GA102 GPU 架构白皮书（附录 A/B：RTX 3090 / 3080 / 3070 逐精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf"}],"tags":[],"tensor_sparse_tops":null,"order":22},{"id":"geforce-rtx-3050-8g","name":"GeForce RTX 3050 8GB","short_name":"RTX 3050 8GB","tag":"30 系入门","category":"geforce","series":"RTX 30 系列（Ampere）","architecture":"Ampere","codename":"GA106","process":"Samsung 8nm 8N","release_date":"2022-01","cuda_cores":2560,"tensor_cores":80,"rt_cores":80,"sm_count":20,"base_clock_mhz":1550,"boost_clock_mhz":1780,"fp32_tflops_dense":9.1,"fp64_tflops_dense":0.1,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":18.2,"bf16":18.2,"tf32":9.1,"int8":36.5},"tensor_sparse_tflops":{"fp16":36.4,"bf16":36.4,"tf32":18.2,"int8":73},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":8,"memory_type":"GDDR6","memory_bus_width_bit":128,"memory_bandwidth_gbs":224,"max_power_w":130,"recommended_psu_w":550,"power_connector":"1x PCIe 8-pin","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"带宽按 128-bit × 14 Gbps 换算（†）","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 30 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/"},{"kind":"spec","note":"NVIDIA 官方规格对比页中的 RTX 30 系列规格表","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ampere GA102 GPU 架构白皮书（附录 A/B：RTX 3090 / 3080 / 3070 逐精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf"}],"tags":[],"tensor_sparse_tops":null,"order":23},{"id":"geforce-rtx-3050-6g","name":"GeForce RTX 3050 6GB","short_name":"RTX 3050 6GB","tag":"30 系入门","category":"geforce","series":"RTX 30 系列（Ampere）","architecture":"Ampere","codename":"GA107","process":"Samsung 8nm 8N","release_date":"2024-02","cuda_cores":2304,"tensor_cores":72,"rt_cores":72,"sm_count":18,"base_clock_mhz":1040,"boost_clock_mhz":1470,"fp32_tflops_dense":6.8,"fp64_tflops_dense":0.1,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":13.5,"bf16":13.5,"tf32":6.8,"int8":27.1},"tensor_sparse_tflops":{"fp16":27,"bf16":27,"tf32":13.6,"int8":54.2},"derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":6,"memory_type":"GDDR6","memory_bus_width_bit":96,"memory_bandwidth_gbs":168,"max_power_w":70,"recommended_psu_w":300,"power_connector":"无需外接供电（PCIe 插槽供电）","slot_width":null,"length_mm":null,"interface":"PCIe 5.0 x16","form_factor":"独立显卡（PCIe）","nvlink":"不支持","display_outputs":"3x DisplayPort 2.1b + 1x HDMI 2.1b","notes":"70W 无需外接供电；官方对比页脚注确认 2304 CUDA 核心、1.51/1.76 GHz（OEM 版本频率）不同，此处按零售版 1.04/1.47 GHz；带宽按 96-bit × 14 Gbps 换算（†）","sources":[{"kind":"spec","note":"NVIDIA 官方 RTX 30 系列规格页","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/"},{"kind":"spec","note":"NVIDIA 官方规格对比页中的 RTX 30 系列规格表","url":"https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"},{"kind":"dense","note":"NVIDIA Ampere GA102 GPU 架构白皮书（附录 A/B：RTX 3090 / 3080 / 3070 逐精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf"}],"tags":[],"tensor_sparse_tops":null,"order":24},{"id":"rtx-pro-6000-blackwell","name":"NVIDIA RTX PRO 6000 Blackwell Workstation Edition","short_name":"RTX PRO 6000","tag":"工作站旗舰","category":"workstation","series":"RTX PRO Blackwell 工作站","architecture":"Blackwell","codename":"GB202","process":"TSMC 4nm 4N","release_date":"2025-03","cuda_cores":24064,"tensor_cores":752,"rt_cores":752,"sm_count":188,"base_clock_mhz":null,"boost_clock_mhz":2617,"fp32_tflops_dense":126,"fp64_tflops_dense":2,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp4":2015.2,"fp8":1007.6,"fp16":503.8,"bf16":503.8,"tf32":251.9,"int8":1007.6},"tensor_sparse_tflops":{"fp4":4030.4,"fp8":2015.2,"fp16":1007.6,"bf16":1007.6,"tf32":503.8,"int8":2015.2},"ai_tops_official":4000,"ai_tops_precision":"FP4（稀疏，官方标注 \"Theoretical FP4 TOPS using sparsity\"）","memory_size_gb":96,"memory_type":"GDDR7 with ECC","memory_bus_width_bit":512,"memory_bandwidth_gbs":1792,"max_power_w":600,"recommended_psu_w":null,"power_connector":"因厂商而异","slot_width":null,"length_mm":305,"interface":"PCIe 5.0 x16","form_factor":"5.4\" H x 12.0\" L 双槽（双流道散热）","nvlink":"不支持（Blackwell 工作站卡取消 NVLink）","display_outputs":"4x DisplayPort 2.1b","notes":"官方白皮书附录 A：FP32 126 TFLOPS、RT 381.8 TFLOPS、FP4 稠密/稀疏 2015.2/4030.4（产品页标称 4,000 AI TOPS）；96GB GDDR7 ECC、1,792 GB/s、600W","derived":["fp64_tflops_dense"],"sources":[{"kind":"dense","note":"NVIDIA RTX PRO Blackwell GPU 架构白皮书（附录 A：A6000 / RTX 6000 Ada / RTX PRO 6000 全精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/quadro-product-literature/pdf/NVIDIA-RTX-Blackwell-PRO-GPU-Architecture-v1_1.pdf"},{"kind":"spec","note":"NVIDIA RTX PRO 6000 Blackwell 工作站版产品页规格表","url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/"},{"kind":"spec","note":"NVIDIA RTX PRO 6000 Blackwell 工作站版官方数据表（PDF）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/data-center/rtx-pro-6000-blackwell-workstation-edition/workstation-blackwell-rtx-pro-6000-workstation-edition-nvidia-us-3519208-web.pdf"}],"flagship":true,"tags":["ai","ws","top"],"tensor_sparse_tops":null,"order":25},{"id":"rtx-pro-6000-blackwell-max-q","name":"NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition","short_name":"RTX PRO 6000","tag":"工作站旗舰","category":"workstation","series":"RTX PRO Blackwell 工作站","architecture":"Blackwell","codename":"GB202","process":"TSMC 4nm 4N","release_date":"2025-05","cuda_cores":24064,"tensor_cores":752,"rt_cores":752,"sm_count":188,"base_clock_mhz":null,"boost_clock_mhz":2280,"fp32_tflops_dense":109.7,"fp64_tflops_dense":1.7,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp4":1755.7,"fp8":877.9,"fp16":438.9,"bf16":438.9,"tf32":219.5,"int8":877.9},"tensor_sparse_tflops":{"fp4":3511.4,"fp8":1755.7,"fp16":877.9,"bf16":877.9,"tf32":438.9,"int8":1755.7},"ai_tops_official":3511,"ai_tops_precision":"FP4（稀疏，官方标注 \"Theoretical FP4 TOPS using sparsity\"）","memory_size_gb":96,"memory_type":"GDDR7 with ECC","memory_bus_width_bit":512,"memory_bandwidth_gbs":1792,"max_power_w":300,"recommended_psu_w":null,"power_connector":"因厂商而异","slot_width":null,"length_mm":267,"interface":"PCIe 5.0 x16","form_factor":"4.4\" H x 10.5\" L 双槽（主动散热）","nvlink":"不支持（Blackwell 工作站卡取消 NVLink）","display_outputs":"4x DisplayPort 2.1b","notes":"同为 96GB / 1,792 GB/s，功耗 600W→300W，频率 2617→2280 MHz，FP4 稀疏 4030.4→3511.4；官方白皮书附录 A 与 300W 数据表一致","derived":["fp64_tflops_dense"],"sources":[{"kind":"dense","note":"NVIDIA RTX PRO Blackwell GPU 架构白皮书（附录 A：A6000 / RTX 6000 Ada / RTX PRO 6000 全精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/quadro-product-literature/pdf/NVIDIA-RTX-Blackwell-PRO-GPU-Architecture-v1_1.pdf"},{"kind":"spec","note":"NVIDIA RTX PRO 6000 Blackwell Max-Q 产品页规格表","url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000-max-q/"},{"kind":"spec","note":"NVIDIA RTX PRO 桌面 GPU 全系列规格对照表（显存/功耗/板型）","url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/"}],"flagship":true,"tags":["ai","ws","top"],"tensor_sparse_tops":null,"order":26},{"id":"rtx-pro-5000-blackwell","name":"NVIDIA RTX PRO 5000 Blackwell","short_name":"RTX PRO 5000","tag":"工作站","category":"workstation","series":"RTX PRO Blackwell 工作站","architecture":"Blackwell","codename":"GB202","process":"TSMC 4nm 4N","release_date":"2025-03","cuda_cores":14080,"tensor_cores":440,"rt_cores":440,"sm_count":110,"base_clock_mhz":null,"boost_clock_mhz":2600,"fp32_tflops_dense":73.2,"fp64_tflops_dense":1.1,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp4":585.7,"fp8":292.9,"fp16":146.4,"bf16":146.4,"tf32":73.2,"int8":292.9},"tensor_sparse_tflops":{"fp4":1171.4,"fp8":585.8,"fp16":292.8,"bf16":292.8,"tf32":146.4,"int8":585.8},"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":72,"memory_type":"GDDR7 with ECC","memory_bus_width_bit":384,"memory_bandwidth_gbs":1344,"max_power_w":300,"recommended_psu_w":null,"power_connector":"因厂商而异","slot_width":null,"length_mm":267,"interface":"PCIe 5.0 x16","form_factor":"4.4\" H x 10.5\" L 双槽","nvlink":"不支持（Blackwell 工作站卡取消 NVLink）","display_outputs":"4x DisplayPort 2.1b","notes":"72GB 版本；官方未给出 AI TOPS，Tensor 峰值按 Blackwell 每 SM 每时钟吞吐量换算（†），功耗按官方全系列对照表为 300W","derived":["fp32_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"sources":[{"kind":"spec","note":"NVIDIA RTX PRO 桌面 GPU 全系列规格对照表（显存/功耗/板型）","url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/"},{"kind":"dense","note":"NVIDIA RTX Blackwell GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf"}],"flagship":false,"tags":["ai","ws"],"tensor_sparse_tops":null,"order":27},{"id":"rtx-pro-4000-blackwell","name":"NVIDIA RTX PRO 4000 Blackwell","short_name":"RTX PRO 4000","tag":"工作站","category":"workstation","series":"RTX PRO Blackwell 工作站","architecture":"Blackwell","codename":"GB203","process":"TSMC 4nm 4N","release_date":"2025-03","cuda_cores":8960,"tensor_cores":280,"rt_cores":280,"sm_count":70,"base_clock_mhz":null,"boost_clock_mhz":2445,"fp32_tflops_dense":43.8,"fp64_tflops_dense":0.7,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp4":350.5,"fp8":175.3,"fp16":87.6,"bf16":87.6,"tf32":43.8,"int8":175.3},"tensor_sparse_tflops":{"fp4":701,"fp8":350.6,"fp16":175.2,"bf16":175.2,"tf32":87.6,"int8":350.6},"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":24,"memory_type":"GDDR7 with ECC","memory_bus_width_bit":192,"memory_bandwidth_gbs":672,"max_power_w":145,"recommended_psu_w":null,"power_connector":"因厂商而异","slot_width":null,"length_mm":241,"interface":"PCIe 5.0 x16","form_factor":"4.4\" H x 9.5\" L 单槽","nvlink":"不支持（Blackwell 工作站卡取消 NVLink）","display_outputs":"4x DisplayPort 2.1b","notes":"单槽 145W；官方未给出 AI TOPS 与频率，Tensor 峰值按 GB203 同款 SM 结构换算（†）","derived":["boost_clock_mhz","fp32_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"sources":[{"kind":"spec","note":"NVIDIA RTX PRO 桌面 GPU 全系列规格对照表（显存/功耗/板型）","url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/"},{"kind":"dense","note":"NVIDIA RTX Blackwell GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf"}],"flagship":false,"tags":["ws"],"tensor_sparse_tops":null,"order":28},{"id":"rtx-pro-2000-blackwell","name":"NVIDIA RTX PRO 2000 Blackwell","short_name":"RTX PRO 2000","tag":"工作站","category":"workstation","series":"RTX PRO Blackwell 工作站","architecture":"Blackwell","codename":"GB206","process":"TSMC 4nm 4N","release_date":"2025-08","cuda_cores":4352,"tensor_cores":136,"rt_cores":136,"sm_count":34,"base_clock_mhz":null,"boost_clock_mhz":1957,"fp32_tflops_dense":17,"fp64_tflops_dense":0.3,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp4":136.3,"fp8":68.1,"fp16":34.1,"bf16":34.1,"tf32":17,"int8":68.1},"tensor_sparse_tflops":{"fp4":272.6,"fp8":136.2,"fp16":68.2,"bf16":68.2,"tf32":34,"int8":136.2},"ai_tops_official":545,"ai_tops_precision":"FP4（稀疏，官方标注 \"Theoretical FP4 TOPS using sparsity\"）","memory_size_gb":16,"memory_type":"GDDR7 with ECC","memory_bus_width_bit":128,"memory_bandwidth_gbs":288,"max_power_w":70,"recommended_psu_w":null,"power_connector":"因厂商而异","slot_width":null,"length_mm":168,"interface":"PCIe 5.0 x16","form_factor":"2.7\" H x 6.6\" L 双槽半高","nvlink":"不支持（Blackwell 工作站卡取消 NVLink）","display_outputs":"4x DisplayPort 2.1b","notes":"官方数据表：545 AI TOPS（FP4 稀疏）；逐精度峰值按 Blackwell 每 SM 每时钟吞吐量换算（†）","derived":["tensor_dense_tflops","tensor_sparse_tflops"],"sources":[{"kind":"spec","note":"NVIDIA RTX PRO 桌面 GPU 全系列规格对照表（显存/功耗/板型）","url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/"}],"flagship":false,"tags":["ws"],"tensor_sparse_tops":null,"order":29},{"id":"rtx-6000-ada","name":"NVIDIA RTX 6000 Ada Generation","short_name":"RTX 6000 Ada","tag":"上代工作站","category":"workstation","series":"RTX Ada 工作站（上代）","architecture":"Ada Lovelace","codename":"AD102","process":"TSMC 4nm 4N","release_date":"2022-12","cuda_cores":18176,"tensor_cores":568,"rt_cores":568,"sm_count":142,"base_clock_mhz":null,"boost_clock_mhz":2505,"fp32_tflops_dense":91.1,"fp64_tflops_dense":1.4,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp8":728.5,"fp16":364,"bf16":364,"tf32":182.1,"int8":728.5},"tensor_sparse_tflops":{"fp8":1457,"fp16":728,"bf16":728,"tf32":364.2,"int8":1457},"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":48,"memory_type":"GDDR6 with ECC","memory_bus_width_bit":384,"memory_bandwidth_gbs":960,"max_power_w":300,"recommended_psu_w":null,"power_connector":"因厂商而异","slot_width":null,"length_mm":267,"interface":"PCIe 5.0 x16","form_factor":"4.4\" H x 10.5\" L 双槽","nvlink":"不支持（Blackwell 工作站卡取消 NVLink）","display_outputs":"4x DisplayPort 2.1b","notes":"官方白皮书附录 A：FP32 91.1 TFLOPS、RT 210.6 TFLOPS、FP8 稠密/稀疏 728.5/1457、FP16 364/728；48GB GDDR6 ECC、960 GB/s、300W","derived":["fp64_tflops_dense"],"sources":[{"kind":"dense","note":"NVIDIA RTX PRO Blackwell GPU 架构白皮书（附录 A：A6000 / RTX 6000 Ada / RTX PRO 6000 全精度表）","url":"https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/quadro-product-literature/pdf/NVIDIA-RTX-Blackwell-PRO-GPU-Architecture-v1_1.pdf"},{"kind":"spec","note":"NVIDIA RTX PRO 桌面 GPU 全系列规格对照表（显存/功耗/板型）","url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":true,"tags":["ai","ws"],"tensor_sparse_tops":null,"order":30},{"id":"rtx-5000-ada","name":"NVIDIA RTX 5000 Ada Generation","short_name":"RTX 5000 Ada","tag":"上代工作站","category":"workstation","series":"RTX Ada 工作站（上代）","architecture":"Ada Lovelace","codename":"AD102","process":"TSMC 4nm 4N","release_date":"2023-08","cuda_cores":12800,"tensor_cores":400,"rt_cores":400,"sm_count":100,"base_clock_mhz":null,"boost_clock_mhz":2550,"fp32_tflops_dense":65.3,"fp64_tflops_dense":1,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp8":522.2,"fp16":261.1,"bf16":261.1,"tf32":130.6,"int8":522.2},"tensor_sparse_tflops":{"fp8":1044.4,"fp16":522.2,"bf16":522.2,"tf32":261.2,"int8":1044.4},"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":32,"memory_type":"GDDR6 with ECC","memory_bus_width_bit":256,"memory_bandwidth_gbs":576,"max_power_w":250,"recommended_psu_w":null,"power_connector":"因厂商而异","slot_width":null,"length_mm":267,"interface":"PCIe 5.0 x16","form_factor":"4.4\" H x 10.5\" L 双槽","nvlink":"不支持（Blackwell 工作站卡取消 NVLink）","display_outputs":"4x DisplayPort 2.1b","notes":"与 RTX 6000 Ada 同为 AD102 核心的精简版本，各精度 Tensor 峰值按 RTX PRO 白皮书的 Ada 每 SM 每时钟吞吐量表折算（†）","derived":["fp32_tflops_dense","fp64_tflops_dense","tensor_dense_tflops","tensor_sparse_tflops"],"sources":[{"kind":"spec","note":"NVIDIA RTX PRO 桌面 GPU 全系列规格对照表（显存/功耗/板型）","url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":false,"tags":["ws"],"tensor_sparse_tops":null,"order":31},{"id":"rtx-a6000","name":"NVIDIA RTX A6000","short_name":"RTX A6000","tag":"Ampere 工作站","category":"workstation","series":"RTX A 系列（Ampere）","architecture":"Ampere","codename":"GA102","process":"Samsung 8nm","release_date":"2020-10","cuda_cores":10752,"tensor_cores":336,"rt_cores":84,"sm_count":84,"base_clock_mhz":null,"boost_clock_mhz":1800,"fp32_tflops_dense":38.7,"fp64_tflops_dense":1.2,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":154.8,"bf16":154.8,"tf32":77.4,"int8":309.7},"tensor_sparse_tflops":{"fp16":309.6,"bf16":309.6,"tf32":154.8,"int8":619.4},"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":48,"memory_type":"GDDR6 with ECC","memory_bus_width_bit":384,"memory_bandwidth_gbs":768,"max_power_w":300,"recommended_psu_w":null,"power_connector":"因厂商而异","slot_width":null,"length_mm":267,"interface":"PCIe 5.0 x16","form_factor":"4.4\" H x 10.5\" L 双槽","nvlink":"不支持（Blackwell 工作站卡取消 NVLink）","display_outputs":"4x DisplayPort 1.4a","notes":"Ampere 架构，无 FP8/FP4；各精度 Tensor 峰值按 Ampere 每 SM 每时钟吞吐量换算（†）","derived":["tensor_dense_tflops","tensor_sparse_tflops"],"sources":[{"kind":"spec","note":"NVIDIA RTX PRO 桌面 GPU 全系列规格对照表（显存/功耗/板型）","url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":false,"tags":["ws"],"tensor_sparse_tops":null,"order":32},{"id":"rtx-a5000","name":"NVIDIA RTX A5000","short_name":"RTX A5000","tag":"Ampere 工作站","category":"workstation","series":"RTX A 系列（Ampere）","architecture":"Ampere","codename":"GA102","process":"Samsung 8nm","release_date":"2021-04","cuda_cores":8192,"tensor_cores":256,"rt_cores":64,"sm_count":64,"base_clock_mhz":null,"boost_clock_mhz":1695,"fp32_tflops_dense":27.8,"fp64_tflops_dense":0.9,"fp64_tensor_tflops":null,"tensor_dense_tflops":{"fp16":111.1,"bf16":111.1,"tf32":55.5,"int8":222.2},"tensor_sparse_tflops":{"fp16":222.2,"bf16":222.2,"tf32":111,"int8":444.4},"ai_tops_official":null,"ai_tops_precision":"","memory_size_gb":24,"memory_type":"GDDR6 with ECC","memory_bus_width_bit":384,"memory_bandwidth_gbs":768,"max_power_w":230,"recommended_psu_w":null,"power_connector":"因厂商而异","slot_width":null,"length_mm":267,"interface":"PCIe 5.0 x16","form_factor":"4.4\" H x 10.5\" L 双槽","nvlink":"不支持（Blackwell 工作站卡取消 NVLink）","display_outputs":"4x DisplayPort 1.4a","notes":"各精度 Tensor 峰值按 Ampere 每 SM 每时钟吞吐量换算（†）","derived":["tensor_dense_tflops","tensor_sparse_tflops"],"sources":[{"kind":"spec","note":"NVIDIA RTX PRO 桌面 GPU 全系列规格对照表（显存/功耗/板型）","url":"https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/"},{"kind":"dense","note":"NVIDIA Ada GPU 架构白皮书（附录 A/B/C：各精度稠密/稀疏 Tensor 峰值）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"flagship":false,"tags":["ws"],"tensor_sparse_tops":null,"order":33},{"category":"datacenter","derived":[],"display_outputs":"无","nvlink_generation":5,"nvlink_bandwidth_gbs":1800,"pcie_generation":5,"multi_instance_gpu":"GPU 即 B200；MIG 支持随 B200（最多 7 个实例，1g.23gb…7g.180gb）","networking":"NVL72 机架内为单一 NVLink 5 域（72 GPU 聚合 130 TB/s，1.8 TB/s/GPU）；DGX GB200 每个 1RU 计算托盘配 4x ConnectX-7 单口 400G OSFP + 2x BlueField-3 DPU 双口 400G；DGX GB300 托盘改用 4x ConnectX-8 800G。注：任务简报中的「8x ConnectX-8」与 NVIDIA DGX GB200 文档不符（ConnectX-8 属 GB300）","sources":[{"kind":"spec","note":"NVIDIA GB200 NVL72 产品页规格表（脚注：sparse 为稠密两倍）","url":"https://www.nvidia.com/en-us/data-center/gb200-nvl72/"}],"id":"dc-gb200","short_name":"GB200 (NVL72/单 GPU)","tag":"Blackwell","architecture":"Blackwell","codename":"GB100（Grace Blackwell 超级芯片）","process":"TSMC 4NP","release_date":"2024-03","series":"Blackwell（B200 / GB200）","form_factor":"Grace Blackwell 超级芯片（2 GPU + 1 Grace CPU）／NVL72 机架","sm_count":null,"cuda_cores":null,"tensor_cores":null,"rt_cores":null,"base_clock_mhz":null,"boost_clock_mhz":null,"fp32_tflops_dense":80,"fp64_tflops_dense":40,"fp64_tensor_tflops":40,"tensor_dense_tflops":{"fp4":10000,"fp8":5000,"fp6":5000,"fp16":2500,"bf16":2500,"tf32":1250,"int8":5000},"tensor_sparse_tflops":{"fp4":20000,"fp8":10000,"fp6":10000,"fp16":5000,"bf16":5000,"tf32":2500,"int8":10000},"ai_tops_official":20000,"ai_tops_precision":"NVFP4（稀疏；NVL72 整机 1,440 PFLOPS ÷ 72 GPU）","memory_size_gb":186,"memory_type":"HBM3E","memory_bus_width_bit":null,"memory_bandwidth_gbs":8000,"max_power_w":1200,"power_connector":"机架级供电（NVL72 整机约 120 kW）","slot_width":null,"interface":"NVLink 5（GPU 间 1.8 TB/s）","nvlink":"第 5 代 NVLink，GPU 间 1.8 TB/s；NVL72 整机 NVLink 总带宽 130 TB/s","notes":"官方规格以 sparse | dense 并列（脚注：sparse 为稠密两倍）：GB200 超级芯片（2 GPU）NVFP4 40 | 20 PFLOPS、FP8/FP6 20 PFLOPS 稀疏、INT8 20 POPS 稀疏、FP16/BF16 10 PFLOPS 稀疏、TF32 5 PFLOPS 稀疏、FP32 160 TFLOPS、FP64/FP64 Tensor 80 TFLOPS；NVL72 整机 NVFP4 1,440 | 720 PFLOPS、13.4 TB HBM3E | 576 TB/s。此处按 72 GPU 折算单 GPU 峰值（**注意 FP16/BF16 稠密 2,500、TF32 稠密 1,250，低于 FP8**）","name":"NVIDIA GB200（NVL72 单 GPU 折算）","flagship":true,"tags":["ai","dc","top"],"recommended_psu_w":null,"length_mm":null,"tensor_sparse_tops":null,"order":34},{"category":"datacenter","derived":["max_power_w"],"display_outputs":"无","nvlink_generation":5,"nvlink_bandwidth_gbs":1800,"pcie_generation":5,"multi_instance_gpu":"支持，最多 7 个实例（1g.23gb / 1g.23gb+me / 1g.45gb / 2g.45gb / 3g.90gb / 4g.90gb / 7g.180gb）","networking":"HGX B200：8 卡经 NVSwitch 全互联，聚合 14.4 TB/s；DGX B200：2x 第 5 代 NVSwitch（聚合 14.4 TB/s）+ 8x ConnectX-7 单口 400G + 2x BlueField-3 DPU","sources":[{"kind":"spec","note":"NVIDIA HGX B200 / Blackwell 产品页规格表（标注 sparse | dense）","url":"https://www.nvidia.com/en-us/data-center/b200/"},{"kind":"spec","note":"NVIDIA GB200 NVL72 产品页规格表（脚注：sparse 为稠密两倍）","url":"https://www.nvidia.com/en-us/data-center/gb200-nvl72/"}],"id":"dc-b200","short_name":"B200","tag":"Blackwell","architecture":"Blackwell","codename":"GB100","process":"TSMC 4NP","release_date":"2024-03","form_factor":"SXM（HGX B200 8 卡基板）","sm_count":null,"cuda_cores":null,"tensor_cores":null,"rt_cores":null,"base_clock_mhz":null,"boost_clock_mhz":null,"fp32_tflops_dense":75,"fp64_tflops_dense":37,"fp64_tensor_tflops":37,"tensor_dense_tflops":{"fp4":9000,"fp8":4500,"fp6":4500,"fp16":2250,"bf16":2250,"tf32":1125,"int8":4500},"tensor_sparse_tflops":{"fp4":18000,"fp8":9000,"fp6":9000,"fp16":4500,"bf16":4500,"tf32":2250,"int8":9000},"ai_tops_official":18000,"ai_tops_precision":"FP4（稀疏；HGX B200 8 卡 144 PFLOPS ÷ 8）","memory_size_gb":180,"memory_type":"HBM3E","memory_bus_width_bit":null,"memory_bandwidth_gbs":8000,"max_power_w":1000,"power_connector":"SXM 板级供电","slot_width":null,"interface":"NVLink 5（GPU 间 1.8 TB/s）","nvlink":"第 5 代 NVLink，900 GB/s 单向 / 1.8 TB/s 双向","notes":"HGX B200 8 卡系统（官方数据表脚注：「1. Specification in Sparse | Dense；2. Specification in Sparse. Dense is ½ sparse spec shown.」）：FP4 144 | 72 PFLOPS（稀疏 | 稠密）、FP8/FP6 72 PFLOPS 稀疏、INT8 72 POPS 稀疏、FP16/BF16 36 PFLOPS 稀疏、TF32 18 PFLOPS 稀疏、FP32 600 TFLOPS、FP64/FP64 Tensor 296 TFLOPS。本行为单 GPU 折算：FP16/BF16 稠密 2,250、TF32 稠密 1,125（**注意 FP16/BF16 与 TF32 低于 FP8，切勿沿用 FP8 数值**）；单卡 TDP 官方未在该页给出，按 1,000W 量级标注（DGX B200 文档记载 nvidia-smi 报单 GPU 最大功耗 1,000W）","name":"NVIDIA B200","series":"Blackwell（B200 / GB200）","flagship":true,"tags":["ai","dc","top"],"recommended_psu_w":null,"length_mm":null,"tensor_sparse_tops":null,"order":35},{"category":"datacenter","derived":[],"display_outputs":"无","nvlink_generation":4,"nvlink_bandwidth_gbs":900,"pcie_generation":5,"multi_instance_gpu":"支持，最多 7 个实例 @18GB（官方页记 1g.18gb…7g.141gb）","networking":"与 H100 SXM 相同：HGX H200 / DGX H200 用 4x 第 4 代 NVSwitch，GPU 间 900 GB/s；DGX H200 配 8x ConnectX-7 400G + 2x BlueField-3 DPU","sources":[{"kind":"dense","note":"NVIDIA H200 产品页规格表（脚注 *With sparsity）","url":"https://www.nvidia.com/en-us/data-center/h200/"}],"id":"dc-h200-sxm","short_name":"H200 SXM","tag":"Hopper","architecture":"Hopper","codename":"GH100","process":"TSMC 4nm 4N","release_date":"2023-11","form_factor":"SXM5","sm_count":132,"cuda_cores":16896,"tensor_cores":528,"rt_cores":null,"base_clock_mhz":null,"boost_clock_mhz":1980,"fp32_tflops_dense":67,"fp64_tflops_dense":34,"fp64_tensor_tflops":67,"tensor_dense_tflops":{"fp8":1979,"fp16":989,"bf16":989,"tf32":494,"int8":1979},"tensor_sparse_tflops":{"fp8":3958,"fp16":1979,"bf16":1979,"tf32":989,"int8":3958},"ai_tops_official":3958,"ai_tops_precision":"FP8/INT8（稀疏；官方规格表脚注 \"With sparsity\"）","memory_size_gb":141,"memory_type":"HBM3E","memory_bus_width_bit":6144,"memory_bandwidth_gbs":4800,"max_power_w":700,"power_connector":"SXM 板级供电","slot_width":5,"interface":"PCIe 5.0 x16 + NVLink 4","nvlink":"第 4 代 NVLink，900 GB/s","notes":"算力与 H100 SXM 相同，主要升级为 141GB HBM3E 与 4.8 TB/s 带宽；官方数据表：FP64 34、FP64 Tensor 67、FP32 67 TFLOPS，TF32/BF16/FP16/FP8/INT8 稀疏 989/1979/1979/3958/3958。TDP 最高 700W（可配置），MIG 最多 7 个 @18GB","name":"NVIDIA H200 SXM","series":"Hopper（H100 / H200）","flagship":true,"tags":["ai","dc","top"],"recommended_psu_w":null,"length_mm":null,"tensor_sparse_tops":null,"order":36},{"category":"datacenter","derived":[],"display_outputs":"无","nvlink_generation":4,"nvlink_bandwidth_gbs":900,"pcie_generation":5,"multi_instance_gpu":"支持，最多 7 个实例 @10GB（1g.10gb / 1g.10gb+me / 1g.20gb / 2g.20gb / 3g.40gb / 4g.40gb / 7g.80gb）","networking":"HGX H100 / DGX H100：4x 第 4 代 NVSwitch，GPU 间 900 GB/s；DGX H100 另配 8x ConnectX-7 单口 400G + 2x ConnectX-7 双口 + 2x BlueField-3 DPU；NVLink Switch System 可扩至 256 GPU（57.6 TB/s 全互联）","sources":[{"kind":"dense","note":"NVIDIA H100 产品页规格表","url":"https://www.nvidia.com/en-us/data-center/h100/"}],"id":"dc-h100-sxm","short_name":"H100 SXM","tag":"Hopper","architecture":"Hopper","codename":"GH100","process":"TSMC 4nm 4N","release_date":"2022-03","form_factor":"SXM5","sm_count":132,"cuda_cores":16896,"tensor_cores":528,"rt_cores":null,"base_clock_mhz":1095,"boost_clock_mhz":1980,"fp32_tflops_dense":67,"fp64_tflops_dense":34,"fp64_tensor_tflops":67,"tensor_dense_tflops":{"fp8":1979,"fp16":989,"bf16":989,"tf32":494,"int8":1979},"tensor_sparse_tflops":{"fp8":3958,"fp16":1979,"bf16":1979,"tf32":989,"int8":3958},"ai_tops_official":3958,"ai_tops_precision":"FP8/INT8（稀疏）","memory_size_gb":80,"memory_type":"HBM3","memory_bus_width_bit":5120,"memory_bandwidth_gbs":3350,"max_power_w":700,"power_connector":"SXM 板级供电","slot_width":5,"interface":"PCIe 5.0 x16 + NVLink 4","nvlink":"第 4 代 NVLink，900 GB/s","notes":"官方规格表：FP64 34、FP64 Tensor 67、FP32 67 TFLOPS，TF32/BF16/FP16/FP8/INT8 稀疏 989/1979/1979/3958/3958；TDP 最高 700W（可配置），MIG 最多 7 个 @10GB","name":"NVIDIA H100 SXM","series":"Hopper（H100 / H200）","flagship":true,"tags":["ai","dc","top"],"recommended_psu_w":null,"length_mm":null,"tensor_sparse_tops":null,"order":37},{"category":"datacenter","derived":[],"display_outputs":"无","nvlink_generation":4,"nvlink_bandwidth_gbs":900,"pcie_generation":5,"multi_instance_gpu":"支持，最多 7 个实例 @16.5GB","networking":"无 NVSwitch；2 路或 4 路 NVLink 桥 900 GB/s/GPU + PCIe Gen5 128 GB/s；MGX H200 NVL 系统最多 8 卡","sources":[{"kind":"dense","note":"NVIDIA H200 产品页规格表（脚注 *With sparsity）","url":"https://www.nvidia.com/en-us/data-center/h200/"}],"id":"dc-h200-nvl","short_name":"H200 NVL","tag":"Hopper","architecture":"Hopper","codename":"GH100","process":"TSMC 4nm 4N","release_date":"2024-11","form_factor":"PCIe 双槽风冷","sm_count":114,"cuda_cores":14592,"tensor_cores":456,"rt_cores":null,"base_clock_mhz":null,"boost_clock_mhz":1785,"fp32_tflops_dense":60,"fp64_tflops_dense":30,"fp64_tensor_tflops":60,"tensor_dense_tflops":{"fp8":1670.5,"fp16":835.5,"bf16":835.5,"tf32":417.5,"int8":1670.5},"tensor_sparse_tflops":{"fp8":3341,"fp16":1671,"bf16":1671,"tf32":835,"int8":3341},"ai_tops_official":3341,"ai_tops_precision":"FP8/INT8（稀疏）","memory_size_gb":141,"memory_type":"HBM3E","memory_bus_width_bit":6144,"memory_bandwidth_gbs":4800,"max_power_w":600,"power_connector":"PCIe 8-pin（合作伙伴设计）","slot_width":null,"interface":"PCIe 5.0 x16 + NVLink 桥","nvlink":"2 路或 4 路 NVLink 桥，900 GB/s","notes":"官方规格：FP64 30、FP64 Tensor 60、FP32 60 TFLOPS，TF32/BF16/FP16/FP8/INT8 稀疏 835/1671/1671/3341/3341；TDP 最高 600W（可配置），MIG 最多 7 个 @16.5GB","name":"NVIDIA H200 NVL","series":"Hopper（H100 / H200）","flagship":false,"tags":["ai","dc"],"recommended_psu_w":null,"length_mm":null,"tensor_sparse_tops":null,"order":38},{"category":"datacenter","derived":[],"display_outputs":"无","nvlink_generation":4,"nvlink_bandwidth_gbs":600,"pcie_generation":5,"multi_instance_gpu":"支持，最多 7 个实例 @12GB（1g.12gb / 1g.12gb+me / 1g.24gb / 2g.24gb / 3g.47gb / 4g.47gb / 7g.94gb）","networking":"无 NVSwitch；NVLink 桥 600 GB/s + PCIe Gen5 128 GB/s（官方 H100 产品页规格表 H100 NVL 列）","sources":[{"kind":"dense","note":"NVIDIA H100 产品页规格表","url":"https://www.nvidia.com/en-us/data-center/h100/"}],"id":"dc-h100-nvl","short_name":"H100 NVL","tag":"Hopper","architecture":"Hopper","codename":"GH100","process":"TSMC 4nm 4N","release_date":"2023-03","form_factor":"PCIe 双槽风冷（成对销售，NVLink 桥连接）","sm_count":114,"cuda_cores":14592,"tensor_cores":456,"rt_cores":null,"base_clock_mhz":null,"boost_clock_mhz":1785,"fp32_tflops_dense":60,"fp64_tflops_dense":30,"fp64_tensor_tflops":60,"tensor_dense_tflops":{"fp8":1670.5,"fp16":835.5,"bf16":835.5,"tf32":417.5,"int8":1670.5},"tensor_sparse_tflops":{"fp8":3341,"fp16":1671,"bf16":1671,"tf32":835,"int8":3341},"ai_tops_official":3341,"ai_tops_precision":"FP8/INT8（稀疏）","memory_size_gb":94,"memory_type":"HBM3","memory_bus_width_bit":6144,"memory_bandwidth_gbs":3900,"max_power_w":400,"power_connector":"PCIe 8-pin（合作伙伴设计）","slot_width":null,"interface":"PCIe 5.0 x16 + NVLink 桥","nvlink":"第 4 代 NVLink 桥，600 GB/s；两张卡合计 188GB 显存","notes":"官方规格表按单卡列出 94GB（成对 188GB）、FP64 30、FP64 Tensor 60、FP32 60 TFLOPS；TDP 350-400W 可配置","name":"NVIDIA H100 NVL","series":"Hopper（H100 / H200）","flagship":false,"tags":["ai","dc"],"recommended_psu_w":null,"length_mm":null,"tensor_sparse_tops":null,"order":39},{"category":"datacenter","derived":["fp32_tflops_dense","fp64_tflops_dense","fp64_tensor_tflops","tensor_dense_tflops","tensor_sparse_tflops","ai_tops_official"],"display_outputs":"无","nvlink_generation":4,"nvlink_bandwidth_gbs":600,"pcie_generation":5,"multi_instance_gpu":"支持，最多 7 个实例 @10GB（1g.10gb … 7g.80gb）","networking":"无 NVSwitch；仅 PCIe Gen5 128 GB/s 与 2 路 NVLink 桥 600 GB/s（PCIe 版无 SXM 全互联 fabric）","sources":[{"kind":"dense","note":"NVIDIA H100 产品页规格表","url":"https://www.nvidia.com/en-us/data-center/h100/"}],"id":"dc-h100-pcie","short_name":"H100 PCIe","tag":"Hopper","architecture":"Hopper","codename":"GH100","process":"TSMC 4nm 4N","release_date":"2022-03","form_factor":"PCIe 双槽风冷","sm_count":114,"cuda_cores":14592,"tensor_cores":456,"rt_cores":null,"base_clock_mhz":null,"boost_clock_mhz":1755,"fp32_tflops_dense":51.2,"fp64_tflops_dense":25.6,"fp64_tensor_tflops":51.2,"tensor_dense_tflops":{"fp8":1513,"fp16":756.5,"bf16":756.5,"tf32":378,"int8":1513},"tensor_sparse_tflops":{"fp8":3026,"fp16":1513,"bf16":1513,"tf32":756,"int8":3026},"ai_tops_official":3026,"ai_tops_precision":"FP8/INT8（稀疏）","memory_size_gb":80,"memory_type":"HBM2E","memory_bus_width_bit":5120,"memory_bandwidth_gbs":2000,"max_power_w":350,"power_connector":"PCIe 8-pin（合作伙伴设计）","slot_width":null,"interface":"PCIe 5.0 x16","nvlink":"第 4 代 NVLink 桥（2 路），600 GB/s","notes":"PCIe 版 SM 缩减为 114、频率更低，算力约为 SXM 版的 76%；数值按 Hopper 每 SM 每时钟吞吐量折算（†），NVIDIA 官方数据表未在本页存档中给出这些细分值","name":"NVIDIA H100 PCIe","series":"Hopper（H100 / H200）","flagship":false,"tags":["ai","dc"],"recommended_psu_w":null,"length_mm":null,"tensor_sparse_tops":null,"order":40},{"category":"datacenter","derived":["tensor_dense_tflops","tensor_sparse_tflops","ai_tops_official","fp32_tflops_dense"],"display_outputs":"4x DisplayPort 1.4a","nvlink_generation":null,"nvlink_bandwidth_gbs":null,"pcie_generation":4,"multi_instance_gpu":"不支持（产品页明确 MIG Support: No；支持 vGPU）","networking":"无 NVLink / 无 NVSwitch（Ada 架构取消 NVLink）；仅 PCIe Gen4 x16 64 GB/s 双向","sources":[{"kind":"spec","note":"NVIDIA L40S 产品页规格表","url":"https://www.nvidia.com/en-us/data-center/l40s/"},{"kind":"spec","note":"Ada GPU 架构白皮书附录（L40 / L4 完整规格）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"id":"dc-l40s","short_name":"L40S","tag":"Ada 推理","architecture":"Ada Lovelace","codename":"AD102","process":"TSMC 4nm 4N","release_date":"2023-08","form_factor":"PCIe 双槽全长风冷（被动散热）","sm_count":142,"cuda_cores":18176,"tensor_cores":568,"rt_cores":142,"base_clock_mhz":null,"boost_clock_mhz":2520,"fp32_tflops_dense":91.6,"fp64_tflops_dense":1.4,"tensor_dense_tflops":{"fp8":732.9,"fp16":366.4,"bf16":366.4,"tf32":183.2,"int8":732.9},"tensor_sparse_tflops":{"fp8":1465.8,"fp16":732.8,"bf16":732.8,"tf32":366.4,"int8":1465.8},"ai_tops_official":1466,"ai_tops_precision":"FP8（稀疏）","memory_size_gb":48,"memory_type":"GDDR6 with ECC","memory_bus_width_bit":384,"memory_bandwidth_gbs":864,"max_power_w":350,"power_connector":"1x PCIe CEM5 16-pin","slot_width":null,"length_mm":267,"interface":"PCIe 4.0 x16","nvlink":"不支持","notes":"Ada 架构数据中心卡，主打生成式 AI 推理与图形渲染，无 NVLink；逐精度峰值按 Ada 每 SM 每时钟吞吐量换算（†）","name":"NVIDIA L40S","series":"Ada（L40S / L4）","fp64_tensor_tflops":null,"flagship":false,"tags":["ai","dc"],"recommended_psu_w":null,"tensor_sparse_tops":null,"order":41},{"category":"datacenter","derived":["tensor_dense_tflops","tensor_sparse_tflops","ai_tops_official","fp32_tflops_dense"],"display_outputs":"4x DisplayPort 1.4a","nvlink_generation":null,"nvlink_bandwidth_gbs":null,"pcie_generation":4,"multi_instance_gpu":"不支持（未列入 NVIDIA MIG User Guide 支持列表）","networking":"无 NVLink / 无 NVSwitch；仅 PCIe Gen4 x16 64 GB/s 双向","sources":[{"kind":"spec","note":"NVIDIA L4 产品页规格表","url":"https://www.nvidia.com/en-us/data-center/l4/"},{"kind":"spec","note":"Ada GPU 架构白皮书附录（L40 / L4 完整规格）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"id":"dc-l4","short_name":"L4","tag":"Ada 推理","architecture":"Ada Lovelace","codename":"AD104","process":"TSMC 4nm 4N","release_date":"2023-03","form_factor":"PCIe 单槽半高风冷","sm_count":58,"cuda_cores":7424,"tensor_cores":232,"rt_cores":58,"base_clock_mhz":null,"boost_clock_mhz":2040,"fp32_tflops_dense":30.3,"fp64_tflops_dense":0.5,"tensor_dense_tflops":{"fp8":242.3,"fp16":121.2,"bf16":121.2,"tf32":60.6,"int8":242.3},"tensor_sparse_tflops":{"fp8":484.6,"fp16":242.4,"bf16":242.4,"tf32":121.2,"int8":484.6},"ai_tops_official":485,"ai_tops_precision":"FP8（稀疏）","memory_size_gb":24,"memory_type":"GDDR6 with ECC","memory_bus_width_bit":192,"memory_bandwidth_gbs":300,"max_power_w":72,"power_connector":"无需外接供电（PCIe 插槽供电）","slot_width":null,"length_mm":168,"interface":"PCIe 4.0 x16","nvlink":"不支持","notes":"72W 单槽半高，面向视频/AI 推理与虚拟化；逐精度峰值按 Ada 每 SM 每时钟吞吐量换算（†）","name":"NVIDIA L4","series":"Ada（L40S / L4）","fp64_tensor_tflops":null,"flagship":false,"tags":["ai","dc"],"recommended_psu_w":null,"tensor_sparse_tops":null,"order":42},{"category":"datacenter","derived":["tensor_dense_tflops","tensor_sparse_tflops","ai_tops_official"],"display_outputs":"3x DisplayPort 1.4a","nvlink_generation":3,"nvlink_bandwidth_gbs":112.5,"pcie_generation":4,"multi_instance_gpu":"不支持（NVIDIA 合作伙伴规格页在 vCS 条目明确标注 no MIG）","networking":"无 NVSwitch；仅 PCIe Gen4 x16 与 2 路 NVLink 桥（112.5 GB/s 双向）","sources":[{"kind":"spec","note":"NVIDIA A40 产品页规格表","url":"https://www.nvidia.com/en-us/data-center/a40/"},{"kind":"spec","note":"Ada GPU 架构白皮书附录（L40 / L4 完整规格）","url":"https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf"}],"id":"dc-a40","short_name":"A40","tag":"Ampere 视觉计算","architecture":"Ampere","codename":"GA102","process":"Samsung 8nm","release_date":"2020-10","form_factor":"PCIe 双槽全长风冷（被动散热）","sm_count":84,"cuda_cores":10752,"tensor_cores":336,"rt_cores":84,"base_clock_mhz":1305,"boost_clock_mhz":1740,"fp32_tflops_dense":37.4,"fp64_tflops_dense":0.6,"tensor_dense_tflops":{"fp16":149.7,"bf16":149.7,"tf32":74.8,"int8":299.3},"tensor_sparse_tflops":{"fp16":299.4,"bf16":299.4,"tf32":149.6,"int8":598.6},"ai_tops_official":599,"ai_tops_precision":"INT8（稀疏）","memory_size_gb":48,"memory_type":"GDDR6 with ECC","memory_bus_width_bit":384,"memory_bandwidth_gbs":696,"max_power_w":300,"power_connector":"1x PCIe 8-pin（CPU 8-pin）","slot_width":null,"length_mm":267,"interface":"PCIe 4.0 x16 + NVLink 3（2 路桥）","nvlink":"第 3 代 NVLink；2 路 NVLink 桥，112.5 GB/s 双向（两张 A40 可合并 96 GB 显存）","notes":"Ampere 架构，无 FP8/FP4；逐精度峰值按 Ampere 每 SM 每时钟吞吐量换算（†）。易错点：A40 支持 NVLink（2 路桥，112.5 GB/s），与 Ada 架构的 L40S / L4（无 NVLink）不同；RT Core 以 84 为准（NVIDIA 合作伙伴规格页为 84，与 GA102 完整核心一致），日文代理页标注的 86 视为笔误","name":"NVIDIA A40","series":"Ampere（A100 / A40）","fp64_tensor_tflops":null,"flagship":false,"tags":["dc"],"recommended_psu_w":null,"tensor_sparse_tops":null,"order":43},{"category":"datacenter","derived":[],"display_outputs":"无","nvlink_generation":3,"nvlink_bandwidth_gbs":600,"pcie_generation":4,"multi_instance_gpu":"支持，最多 7 个实例 @10GB（1g.10gb / 1g.10gb+me / 1g.20gb / 2g.20gb / 3g.40gb / 4g.40gb / 7g.80gb）","networking":"HGX A100 / DGX A100：6x 第 3 代 NVSwitch，GPU 间 600 GB/s","sources":[{"kind":"spec","note":"NVIDIA A100 产品页规格表（稠密 | 稀疏*）","url":"https://www.nvidia.com/en-us/data-center/a100/"}],"id":"dc-a100-sxm","short_name":"A100 SXM 80GB","tag":"Ampere","architecture":"Ampere","codename":"GA100","process":"TSMC 7nm","release_date":"2020-11","form_factor":"SXM4","sm_count":108,"cuda_cores":6912,"tensor_cores":432,"rt_cores":null,"base_clock_mhz":1095,"boost_clock_mhz":1410,"fp32_tflops_dense":19.5,"fp64_tflops_dense":9.7,"fp64_tensor_tflops":19.5,"tensor_dense_tflops":{"fp16":312,"bf16":312,"tf32":156,"int8":624},"tensor_sparse_tflops":{"fp16":624,"bf16":624,"tf32":312,"int8":1248},"ai_tops_official":1248,"ai_tops_precision":"INT8（稀疏）","memory_size_gb":80,"memory_type":"HBM2E","memory_bus_width_bit":5120,"memory_bandwidth_gbs":2039,"max_power_w":400,"power_connector":"SXM 板级供电","slot_width":4,"interface":"PCIe 4.0 x16 + NVLink 3","nvlink":"第 3 代 NVLink，600 GB/s","notes":"A100 不支持 FP8/FP4；官方规格表为「稠密 | 稀疏*」双值，本行按稠密/稀疏对应填入；MIG 最多 7 个 @10GB","name":"NVIDIA A100 SXM 80GB","series":"Ampere（A100 / A40）","flagship":false,"tags":["ai","dc"],"recommended_psu_w":null,"length_mm":null,"tensor_sparse_tops":null,"order":44},{"category":"datacenter","derived":[],"display_outputs":"无","nvlink_generation":3,"nvlink_bandwidth_gbs":600,"pcie_generation":4,"multi_instance_gpu":"支持，最多 7 个实例 @10GB","networking":"无 NVSwitch；PCIe Gen4 + 2 路 NVLink 桥 600 GB/s","sources":[{"kind":"spec","note":"NVIDIA A100 产品页规格表（稠密 | 稀疏*）","url":"https://www.nvidia.com/en-us/data-center/a100/"}],"id":"dc-a100-pcie","short_name":"A100 PCIe 80GB","tag":"Ampere","architecture":"Ampere","codename":"GA100","process":"TSMC 7nm","release_date":"2021-06","form_factor":"PCIe 双槽风冷","sm_count":108,"cuda_cores":6912,"tensor_cores":432,"rt_cores":null,"base_clock_mhz":765,"boost_clock_mhz":1410,"fp32_tflops_dense":19.5,"fp64_tflops_dense":9.7,"fp64_tensor_tflops":19.5,"tensor_dense_tflops":{"fp16":312,"bf16":312,"tf32":156,"int8":624},"tensor_sparse_tflops":{"fp16":624,"bf16":624,"tf32":312,"int8":1248},"ai_tops_official":1248,"ai_tops_precision":"INT8（稀疏）","memory_size_gb":80,"memory_type":"HBM2E","memory_bus_width_bit":5120,"memory_bandwidth_gbs":1935,"max_power_w":300,"power_connector":"PCIe 8-pin（合作伙伴设计）","slot_width":null,"interface":"PCIe 4.0 x16","nvlink":"支持 NVLink 桥（2 路）","notes":"与 SXM 版算力相同，差别在 300W 功耗、1,935 GB/s 带宽与 PCIe 形态","name":"NVIDIA A100 PCIe 80GB","series":"Ampere（A100 / A40）","flagship":false,"tags":["ai","dc"],"recommended_psu_w":null,"length_mm":null,"tensor_sparse_tops":null,"order":45}]};
+
+const state = {
+  data: null,
+  selected: [],
+  q: '',
+  cats: new Set(),
+  collapsedCats: new Set(),   // 由 collapseAll() 在启动时填满
+  collapsedSeries: new Set(),
+  searching: false,
+  precision: null,
+  density: 'dense',
+  rel: 'max',
+  minCount: 2
+};
+
+/* ---------- 小工具 ---------- */
+const $ = s => document.querySelector(s);
+const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+function dig(obj, path){ return String(path).split('.').reduce((o,k)=> (o==null?undefined:o[k]), obj); }
+function num(v){ return typeof v === 'number' && isFinite(v) ? v : null; }
+function fmt(v, digits){
+  const n = num(v);
+  if (n === null) return null;
+  const d = digits == null ? (Math.abs(n) >= 100 ? 0 : (Math.abs(n) >= 10 ? 1 : (Math.abs(n) >= 1 ? 2 : 3))) : digits;
+  return n.toFixed(d).replace(/\.?0+$/, m => (m.indexOf('.') === 0 ? '' : m));
+}
+function shortScale(n, digits){
+  const d = digits == null ? 1 : digits;
+  if (Math.abs(n) >= 1000) return (n/1000).toFixed(Math.abs(n) >= 10000 ? 1 : 2).replace(/\.?0+$/,'') + 'e3';
+  return n.toFixed(Math.abs(n) < 10 ? 2 : (Math.abs(n) < 100 ? 1 : 0)).replace(/\.?0+$/,'');
+}
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('on'), 2200);
+}
+const CAT_LABEL = { geforce:'消费级 GeForce', workstation:'工作站 RTX / RTX PRO', datacenter:'数据中心 H / B / A / L' };
+const CAT_CLASS = { geforce:'', workstation:'ws', datacenter:'dc' };
+
+/* ---------- 主题（白天 / 夜间） ---------- */
+function initTheme(){
+  let saved = null;
+  try { saved = localStorage.getItem('gpucompare-theme'); } catch (e) {}
+  applyTheme(saved || 'dark');
+  const b = $('#btn-theme');
+  if (b) b.onclick = ()=> applyTheme(currentTheme() === 'light' ? 'dark' : 'light');
+}
+function currentTheme(){ return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'; }
+function applyTheme(theme){
+  const t = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
+  const b = $('#btn-theme'), n = $('#theme-name');
+  if (b) b.textContent = t === 'light' ? '🌙 夜间模式' : '☀ 白天模式';
+  if (b) b.title = t === 'light' ? '切换到夜间模式' : '切换到白天模式';
+  if (n) n.textContent = t === 'light' ? '白天' : '深色';
+  try { localStorage.setItem('gpucompare-theme', t); } catch (e) {}
+}
+
+/* ---------- 参数表定义 ----------
+   p:     取值路径（点号分隔）
+   label: 显示名
+   unit:  单位后缀
+   group: 分组
+   src:   数据来源键（tooltip 用）
+   mode:  'max' 越大越好 / 'min' 越小越好 / 'plain' 不评比
+   digits: 小数位
+   prec:  以 'prec.' 开头表示跟随所选精度
+*/
+const PARAMS = [
+  { p:'architecture', label:'架构', group:'核心规格', mode:'plain' },
+  { p:'codename', label:'核心代号', group:'核心规格', mode:'plain' },
+  { p:'process', label:'制程', group:'核心规格', mode:'plain' },
+  { p:'release_date', label:'发布日期', group:'核心规格', mode:'plain' },
+  { p:'sm_count', label:'SM 数量', group:'核心规格', mode:'max' },
+  { p:'cuda_cores', label:'CUDA 核心数', group:'核心规格', mode:'max' },
+  { p:'tensor_cores', label:'Tensor 核心数', group:'核心规格', mode:'max' },
+  { p:'rt_cores', label:'RT 核心数', group:'核心规格', mode:'max' },
+  { p:'base_clock_mhz', label:'基础频率', unit:'MHz', group:'核心规格', mode:'max' },
+  { p:'boost_clock_mhz', label:'加速频率', unit:'MHz', group:'核心规格', mode:'max' },
+
+  { p:'fp32_tflops_dense', label:'FP32（向量）', unit:'TFLOPS', group:'算力', mode:'max', src:'fp32' },
+  { p:'fp64_tflops_dense', label:'FP64（向量）', unit:'TFLOPS', group:'算力', mode:'max', src:'fp64' },
+  { p:'fp64_tensor_tflops', label:'FP64（Tensor）', unit:'TFLOPS', group:'算力', mode:'max', src:'fp64' },
+  { p:'tensor_dense_tflops.fp4', label:'FP4（Tensor）', unit:'TFLOPS', group:'算力', mode:'max', src:'dense' },
+  { p:'tensor_dense_tflops.fp8', label:'FP8（Tensor）', unit:'TFLOPS', group:'算力', mode:'max', src:'dense' },
+  { p:'tensor_dense_tflops.fp6', label:'FP6（Tensor）', unit:'TFLOPS', group:'算力', mode:'max', src:'dense' },
+  { p:'tensor_dense_tflops.fp16', label:'FP16（Tensor）', unit:'TFLOPS', group:'算力', mode:'max', src:'dense' },
+  { p:'tensor_dense_tflops.bf16', label:'BF16（Tensor）', unit:'TFLOPS', group:'算力', mode:'max', src:'dense' },
+  { p:'tensor_dense_tflops.tf32', label:'TF32（Tensor）', unit:'TFLOPS', group:'算力', mode:'max', src:'dense' },
+  { p:'tensor_dense_tflops.int8', label:'INT8（Tensor）', unit:'TOPS', group:'算力', mode:'max', src:'dense' },
+  { p:'tensor_sparse_tflops.fp4', label:'FP4（稀疏）', unit:'TFLOPS', group:'算力', mode:'max', src:'sparse' },
+  { p:'tensor_sparse_tflops.fp8', label:'FP8（稀疏）', unit:'TFLOPS', group:'算力', mode:'max', src:'sparse' },
+  { p:'tensor_sparse_tflops.fp16', label:'FP16（稀疏）', unit:'TFLOPS', group:'算力', mode:'max', src:'sparse' },
+  { p:'tensor_sparse_tflops.int8', label:'INT8（稀疏）', unit:'TOPS', group:'算力', mode:'max', src:'sparse' },
+  { p:'ai_tops_official', label:'官方标称 AI TOPS', unit:'TOPS', group:'算力', mode:'max', src:'ai' },
+  { p:'ai_tops_precision', label:'AI TOPS 精度口径', group:'算力', mode:'plain' },
+
+  { p:'memory_size_gb', label:'显存容量', unit:'GB', group:'显存 / 功耗 / 接口', mode:'max' },
+  { p:'memory_type', label:'显存类型', group:'显存 / 功耗 / 接口', mode:'plain' },
+  { p:'memory_bus_width_bit', label:'显存位宽', unit:'bit', group:'显存 / 功耗 / 接口', mode:'max' },
+  { p:'memory_bandwidth_gbs', label:'显存带宽', unit:'GB/s', group:'显存 / 功耗 / 接口', mode:'max' },
+  { p:'max_power_w', label:'最大功耗 TGP/TBP', unit:'W', group:'显存 / 功耗 / 接口', mode:'min' },
+  { p:'recommended_psu_w', label:'建议电源', unit:'W', group:'显存 / 功耗 / 接口', mode:'plain' },
+  { p:'power_connector', label:'供电接口', group:'显存 / 功耗 / 接口', mode:'plain' },
+  { p:'slot_width', label:'占用槽位', group:'显存 / 功耗 / 接口', mode:'plain' },
+  { p:'length_mm', label:'长度', unit:'mm', group:'显存 / 功耗 / 接口', mode:'plain' },
+  { p:'interface', label:'总线接口', group:'显存 / 功耗 / 接口', mode:'plain' },
+  { p:'form_factor', label:'板型', group:'显存 / 功耗 / 接口', mode:'plain' },
+  { p:'nvlink', label:'NVLink', group:'显存 / 功耗 / 接口', mode:'plain' },
+  { p:'display_outputs', label:'显示输出', group:'显存 / 功耗 / 接口', mode:'plain' }
+];
+const GROUPS = ['核心规格','算力','显存 / 功耗 / 接口'];
+
+/* 图表可用精度 */
+const PRECISIONS = [
+  { key:'tensor_sparse_tflops.fp4',  dense:'tensor_dense_tflops.fp4',  label:'FP4（4 位浮点）',  unit:'TFLOPS' },
+  { key:'tensor_sparse_tflops.fp8',  dense:'tensor_dense_tflops.fp8',  label:'FP8（8 位浮点）',  unit:'TFLOPS' },
+  { key:'tensor_sparse_tflops.fp6',  dense:'tensor_dense_tflops.fp6',  label:'FP6（6 位浮点）',  unit:'TFLOPS' },
+  { key:'tensor_sparse_tflops.fp16', dense:'tensor_dense_tflops.fp16', label:'FP16（半精度）',   unit:'TFLOPS' },
+  { key:'tensor_sparse_tflops.bf16', dense:'tensor_dense_tflops.bf16', label:'BF16（半精度）',   unit:'TFLOPS' },
+  { key:'tensor_sparse_tflops.tf32', dense:'tensor_dense_tflops.tf32', label:'TF32（19 位）',    unit:'TFLOPS' },
+  { key:'tensor_sparse_tflops.int8', dense:'tensor_dense_tflops.int8', label:'INT8（8 位整型）', unit:'TOPS'   },
+  { key:'fp16_dense_vector',         dense:'fp32_tflops_dense',        label:'FP32（向量）',     unit:'TFLOPS' }
+];
+
+/* ============================================================
+   数据装载
+   ============================================================ */
+async function loadData(){
+  if (EMBEDDED) return EMBEDDED;
+  try {
+    const r = await fetch('data/gpu-data.json', { cache:'no-store' });
+    if (r.ok) return await r.json();
+  } catch (e) { /* file:// 下会失败，属预期 */ }
+  throw new Error('未找到内嵌数据，且无法读取 data/gpu-data.json');
+}
+
+/* ============================================================
+   初始化
+   ============================================================ */
+(async function main(){
+  try { state.data = await loadData(); }
+  catch (e) { $('#list').innerHTML = '<div class="empty">数据加载失败：' + e.message + '</div>'; return; }
+
+  const models = state.data.models.slice().sort((a,b)=> (a.order??999)-(b.order??999));
+  state.data.models = models;
+
+  initTheme();
+  $('#snap').textContent = state.data.generated || '—';
+  $('#total').textContent = models.length + ' 款';
+  $('#selcount').textContent = '0';
+  $('#foot').textContent = (state.data.disclaimer || '');
+
+  buildCatChips();
+  collapseAll();
+  renderList();
+  bindUI();
+  render();   // 默认不选中任何显卡，页面为空白状态
+})();
+
+function buildCatChips(){
+  const box = $('#cats');
+  box.innerHTML = '';
+  Object.keys(CAT_LABEL).forEach(k=>{
+    const n = state.data.models.filter(m=>m.category===k).length;
+    const c = el('div','chip on', CAT_LABEL[k].replace(/^.*?(GeForce|RTX|H|B)/,'$1') + ' ' + n);
+    c.title = CAT_LABEL[k] + '：' + n + ' 款';
+    c.dataset.cat = k;
+    c.onclick = ()=>{ state.cats.has(k) ? state.cats.delete(k) : state.cats.add(k);
+      c.classList.toggle('on'); renderList(); render(); };
+    state.cats.add(k);
+    box.appendChild(c);
+  });
+}
+
+function bindUI(){
+  $('#q').addEventListener('input', e=>{ state.q = e.target.value.trim().toLowerCase(); renderList(); });  $('#mincount').addEventListener('input', e=>{
+    state.minCount = +e.target.value; $('#mincount-v').textContent = state.minCount;
+  });
+  document.querySelectorAll('[data-preset]').forEach(b=> b.onclick = ()=> applyPreset(b.dataset.preset));
+  $('#btn-export').onclick = exportCSV;
+  $('#btn-print').onclick = ()=> window.print();
+  document.querySelectorAll('#rel-toggle button').forEach(b=> b.onclick = ()=>{
+    state.rel = b.dataset.rel;
+    document.querySelectorAll('#rel-toggle button').forEach(x=> x.classList.toggle('on', x===b));
+    render();
+  });
+  document.querySelectorAll('#density button').forEach(b=> b.onclick = ()=>{
+    state.density = b.dataset.d;
+    document.querySelectorAll('#density button').forEach(x=> x.classList.toggle('on', x===b));
+    renderChart(); renderMatrix();
+  });
+  const sel = $('#precision');
+  sel.onchange = ()=>{ state.precision = sel.value; renderChart(); renderMatrix(); renderMini(); };
+}
+
+function applyPreset(name){
+  const byTag = t => state.data.models.filter(m=> (m.tags||[]).includes(t));
+  let picks = [];
+  if (name === 'top')   picks = state.data.models.filter(m=> m.flagship).slice(0,8);
+  if (name === 'ai')    picks = byTag('ai');
+  if (name === 'dc')    picks = state.data.models.filter(m=> m.category==='datacenter');
+  if (name === 'ge30')  picks = state.data.models.filter(m=> /30 系列/.test(m.series || ''));
+  if (name === 'clear') picks = [];
+  if (!picks.length && name !== 'clear'){ render(); return; }
+  state.selected = picks.map(m=>m.id);
+  /* 选中后展开对应分组，避免"选中了却看不到"；清空时恢复默认的全部收起 */
+  if (name === 'clear') collapseAll(); else expandAll();
+  renderList(); render();
+  toast(name === 'clear' ? '已清空选择，左侧分类恢复默认收起' : '已选择 ' + state.selected.length + ' 款');
+}
+
+/* ============================================================
+   左侧列表
+   ============================================================ */
+function visibleModels(){
+  const q = state.q;
+  return state.data.models.filter(m=>{
+    if (!state.cats.has(m.category)) return false;
+    if (!q) return true;
+    const hay = [m.name, m.short_name, m.codename, m.architecture, m.series, (m.aliases||[]).join(' ')].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function buildSeriesMap(){
+  const map = new Map();
+  state.data.models.forEach(m=>{
+    if (!map.has(m.category)) map.set(m.category, new Map());
+    const bySeries = map.get(m.category);
+    const key = m.series || m.architecture || '其他';
+    if (!bySeries.has(key)) bySeries.set(key, []);
+    bySeries.get(key).push(m);
+  });
+  return map;
+}
+
+/** 默认状态：一级与二级分类全部收起 */
+function collapseAll(){
+  state.collapsedCats = new Set(Object.keys(CAT_LABEL));
+  state.collapsedSeries = new Set();
+  state.data.models.forEach(m=>{
+    state.collapsedSeries.add(m.category + '::' + (m.series || m.architecture || '其他'));
+  });
+}
+/** 展开所有分组（预设选中后调用，避免"选中了却看不到"） */
+function expandAll(){
+  state.collapsedCats.clear();
+  state.collapsedSeries.clear();
+}
+
+function renderList(){
+  const box = $('#list'); box.innerHTML = '';
+  const all = visibleModels();
+  if (!all.length){ box.appendChild(el('div','empty','没有匹配的型号，换个关键词试试')); return; }
+
+  /* 搜索时自动展开所有分组，方便直接看到命中的型号 */
+  const forceOpen = !!state.q;
+  const seriesMap = buildSeriesMap();
+  let totalShown = 0, totalAll = 0;
+
+  Object.keys(CAT_LABEL).forEach(cat=>{
+    const scoped = all.filter(m=> m.category === cat);
+    const allInCat = state.data.models.filter(m=> m.category === cat);
+    if (!state.cats.has(cat)) return;
+    totalShown += scoped.length; totalAll += allInCat.length;
+
+    const seriesList = seriesMap.get(cat) || new Map();
+    const catCollapsed = !forceOpen && state.collapsedCats.has(cat);
+
+    /* 一级：显卡类别 */
+    const chead = el('div','group-title level1' + (catCollapsed ? ' closed' : ''));
+    chead.appendChild(el('span','tri','▼'));
+    const cl = el('span','lbl', CAT_LABEL[cat]);
+    chead.appendChild(cl);
+    chead.appendChild(el('span','cnt', scoped.length + (scoped.length !== allInCat.length ? '/' + allInCat.length : '') + ' 款'));
+    chead.title = catCollapsed ? '展开' : '收起';
+    chead.onclick = ()=>{
+      if (state.collapsedCats.has(cat)) state.collapsedCats.delete(cat); else state.collapsedCats.add(cat);
+      state.searching = false; renderList();
+    };
+    box.appendChild(chead);
+
+    const cwrap = el('div','group-body');
+    if (catCollapsed) cwrap.style.display = 'none';
+    box.appendChild(cwrap);
+
+    seriesList.forEach((items, series)=>{
+      const inScope = items.filter(m=> scoped.includes(m));
+      if (!inScope.length) return;
+      const key = cat + '::' + series;
+      const sCollapsed = !forceOpen && state.collapsedSeries.has(key);
+
+      /* 二级：代次 / 产品线 */
+      const shead = el('div','group-title level2' + (sCollapsed ? ' closed' : ''));
+      shead.appendChild(el('span','tri','▼'));
+      shead.appendChild(el('span','lbl', series));
+      shead.appendChild(el('span','cnt', inScope.length + ' 款'));
+      shead.onclick = ()=>{
+        if (state.collapsedSeries.has(key)) state.collapsedSeries.delete(key); else state.collapsedSeries.add(key);
+        state.searching = false; renderList();
+      };
+      cwrap.appendChild(shead);
+
+      const swrap = el('div','group-body');
+      if (sCollapsed) swrap.style.display = 'none';
+      cwrap.appendChild(swrap);
+
+      inScope.forEach(m=> swrap.appendChild(gpuCard(m)));
+    });
+  });
+
+  if (!totalShown){
+    box.appendChild(el('div','empty','当前分类被过滤掉了，请在上方重新勾选分类'));
+    return;
+  }
+  const hint = el('div','list-hint', '默认收起全部分组，点标题展开；共 ' + totalAll + ' 款，当前显示 ' + totalShown + ' 款');
+  box.appendChild(hint);
+}
+
+function gpuCard(m){
+  const on = state.selected.includes(m.id);
+  const c = el('div','gpu-card' + (on?' on':''));
+  c.dataset.id = m.id;
+  c.appendChild(el('div','box', on?'✓':''));
+  const info = el('div','info');
+  const n = el('div','n');
+  n.appendChild(document.createTextNode(m.name));
+  if (m.tag) n.appendChild(el('span','tag', m.tag));
+  info.appendChild(n);
+  info.appendChild(el('div','s', [ (m.memory_size_gb?m.memory_size_gb+'GB':'') , m.memory_type||'', m.architecture||'' ].filter(Boolean).join(' · ')));
+  c.appendChild(info);
+  c.onclick = ()=> toggleModel(m.id);
+  return c;
+}
+
+/* 供测试与非标准环境使用的最简 closest 替代 */
+function closestWithClass(node, cls){
+  while (node){
+    if (node.classList && node.classList.contains(cls)) return node;
+    node = node.parentNode;
+  }
+  return null;
+}
+
+function toggleModel(id){
+  const i = state.selected.indexOf(id);
+  if (i >= 0) state.selected.splice(i,1);
+  else state.selected.push(id);
+  renderList(); render();
+}
+
+/* ============================================================
+   渲染总控
+   ============================================================ */
+function selectedModels(){
+  const map = new Map(state.data.models.map(m=>[m.id,m]));
+  return state.selected.map(id=>map.get(id)).filter(Boolean);
+}
+
+function effectivePrecision(){
+  const p = state.precision || 'tensor_sparse_tflops.fp8';
+  const key = state.density === 'dense' ? (PRECISIONS.find(x=>x.key===p)?.dense || p) : p;
+  return key;
+}
+function precisionMeta(){
+  const used = state.precision || 'tensor_sparse_tflops.fp8';
+  return PRECISIONS.find(x=> x.key === used || x.dense === used) || PRECISIONS[1];
+}
+function valueFor(m, key){
+  if (key === 'fp16_dense_vector'){
+    const f = num(m.fp32_tflops_dense);
+    return f == null ? null : f * 2;
+  }
+  return num(dig(m, key));
+}
+
+function render(){
+  renderMatrix(); renderPrecisionSelect(); renderChart(); renderMini(); renderSources();
+  $('#selcount').textContent = state.selected.length;
+}
+
+function renderPrecisionSelect(){
+  const sel = $('#precision');
+  const want = state.precision || 'tensor_sparse_tflops.fp8';
+  sel.innerHTML = '';
+  PRECISIONS.forEach(p=>{
+    const o = el('option', null, p.label + '（' + p.unit + '）');
+    o.value = p.key;
+    if (p.key === want) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+/* ============================================================
+   参数对比矩阵
+   ============================================================ */
+function cellValue(m, prm){
+  const path = prm.p.indexOf('prec.') === 0 ? effectivePrecision() : prm.p;
+  const raw = path === 'fp16_dense_vector' ? valueFor(m, path) : dig(m, path);
+  return { path, raw };
+}
+
+function renderMatrix(){
+  const box = $('#matrix'); box.innerHTML = '';
+  const ms = selectedModels();
+  $('#matrix-sub').textContent = ms.length ? ('已选 ' + ms.length + ' 款 · 点击单元格查看来源' + (ms.length > 6 ? ' · 可左右滚动' : '')) : '';
+  if (!ms.length){
+    box.appendChild(el('div','empty','尚未选择显卡。请在左侧展开「消费级 GeForce / 工作站 / 数据中心」并勾选型号，或用上方的快捷按钮。'));
+    return;
+  }
+  const table = el('table','cmp');
+
+  /* 表头 */
+  const thead = el('thead'); const hr = el('tr');
+  const thp = el('th','param','参数'); thp.scope = 'col'; hr.appendChild(thp);
+  ms.forEach(m=>{
+    const th = el('th','colhead');
+    const nm = el('span','nm'); nm.appendChild(document.createTextNode(m.name)); th.appendChild(nm);
+    th.appendChild(el('span','arch', (m.architecture||'') + (m.codename?(' · '+m.codename):'')));
+    const x = el('span','x','✕'); x.title = '移除该列';
+    x.onclick = ()=> toggleModel(m.id);
+    th.appendChild(x);
+    hr.appendChild(th);
+  });
+  thead.appendChild(hr); table.appendChild(thead);
+
+  /* 表体 */
+  const tb = el('tbody');
+  GROUPS.forEach(g=>{
+    const rows = PARAMS.filter(p=>p.group===g && rowApplicable(p, ms));
+    if (!rows.length) return;
+    const gr = el('tr','group'); const gth = el('th'); gth.colSpan = ms.length + 1;
+    gth.textContent = g; gr.appendChild(gth); tb.appendChild(gr);
+
+    rows.forEach(prm=>{
+      const tr = el('tr');
+      const td0 = el('td','param');
+      const path = prm.p.indexOf('prec.') === 0 ? null : prm.p;
+      const isPrecisionRow = ['tensor_dense_tflops.fp4','tensor_dense_tflops.fp8','tensor_dense_tflops.fp16','tensor_dense_tflops.bf16','tensor_dense_tflops.tf32','tensor_dense_tflops.int8','tensor_dense_tflops.fp6'].includes(prm.p);
+      if (isPrecisionRow){
+        const sp = el('span','precision' + (state.precision === prm.p ? ' on' : ''), prm.label);
+        sp.title = '设为图表与效率指标的默认精度';
+        sp.onclick = ()=>{ state.precision = prm.p; if (state.density==='sparse') state.density='dense';
+          document.querySelectorAll('#density button').forEach(x=> x.classList.toggle('on', x.dataset.d===state.density));
+          $('#precision').value = prm.p; render(); };
+        td0.appendChild(sp);
+      } else {
+        td0.textContent = prm.label;
+      }
+      if (prm.unit) td0.appendChild(el('span','unit', ' ('+prm.unit+')'));
+      tr.appendChild(td0);
+
+      const cells = ms.map(m=>{
+        const { raw } = cellValue(m, prm);
+        return { m, v: num(raw), raw };
+      });
+      const nums = cells.filter(c=>c.v !== null);
+      let bestVal = null;
+      if (nums.length > 1 && prm.mode !== 'plain'){
+        const vals = nums.map(c=>c.v);
+        bestVal = prm.mode === 'max' ? Math.max(...vals) : Math.min(...vals);
+      }
+      cells.forEach(c=>{
+        const td = el('td');
+        const derived = isDerived(c.m, prm.p);
+        if (c.v === null){
+          td.textContent = c.raw == null ? '—' : String(c.raw);
+          td.className = 'na';
+        } else if (typeof c.raw === 'number'){
+          td.textContent = fmt(c.raw, prm.digits);
+          if (bestVal !== null && c.v === bestVal) td.className = 'best';
+        } else {
+          td.textContent = String(c.raw);
+          td.style.whiteSpace = 'normal';
+        }
+        if (derived && c.v !== null){
+          const sup = el('sup','est','†');
+          sup.title = '该数值由 NVIDIA 公布的每 SM 每时钟吞吐量 / 官方 AI TOPS 换算得出（非官方直接标注）';
+          td.appendChild(sup);
+        }
+        if (prm.src && c.v !== null) td.title = sourceTip(c.m, prm.src) + (derived ? '\n（推算值：†）' : '');
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+  });
+
+  /* 相对值行 */
+  const relRows = [
+    { key:'fp32_tflops_dense', label:'FP32 相对值', unit:'TFLOPS', mode:'max' },
+    { key: effectivePrecision(), label:'算力相对值（当前精度）', unit: precisionMeta().unit, mode:'max' },
+    { key:'memory_bandwidth_gbs', label:'显存带宽相对值', unit:'GB/s', mode:'max' },
+    { key:'max_power_w', label:'功耗相对值', unit:'W', mode:'min' }
+  ].filter(r=> r.key && ms.some(m=> valueFor(m, r.key) !== null));
+
+  if (relRows.length){
+    const gr = el('tr','group'); const gth = el('th'); gth.colSpan = ms.length + 1;
+    gth.textContent = '相对比较（' + (state.rel === 'max' ? '以最高值为 100%' : '以最低值为 100%') + '）';
+    gr.appendChild(gth); tb.appendChild(gr);
+    relRows.forEach(r=>{
+      const tr = el('tr');
+      const td0 = el('td','param', r.label); td0.appendChild(el('span','unit',' ('+r.unit+')')); tr.appendChild(td0);
+      const vals = ms.map(m=> valueFor(m, r.key));
+      const present = vals.filter(v=>v!==null);
+      if (!present.length){ ms.forEach(()=> tr.appendChild(el('td','na','—'))); tb.appendChild(tr); return; }
+      const ref = state.rel === 'max' ? Math.max(...present) : Math.min(...present);
+      vals.forEach(v=>{
+        const td = el('td','rel');
+        if (v === null){ td.textContent = '—'; td.className = 'na'; tr.appendChild(td); return; }
+        const pct = ref ? (v / ref) * 100 : 0;
+        td.textContent = (pct >= 10 ? pct.toFixed(pct>=100?0:1) : pct.toFixed(2)) + '%';
+        const bar = el('span','bar');
+        const w = state.rel === 'max' ? Math.min(100, pct) : Math.min(100, 100 * ref / v);
+        bar.style.width = Math.max(2, w) + '%';
+        bar.style.display = 'block';
+        bar.style.background = r.key === 'max_power_w' ? '#ffb020' : '';
+        td.appendChild(bar);
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+  }
+  table.appendChild(tb);
+  box.appendChild(table);
+}
+
+function rowApplicable(prm, ms){
+  const any = ms.some(m=>{
+    const path = prm.p.indexOf('prec.') === 0 ? effectivePrecision() : prm.p;
+    if (path === 'fp16_dense_vector') return valueFor(m, path) !== null;
+    return dig(m, path) !== null && dig(m, path) !== undefined;
+  });
+  return any;
+}
+
+function sourceTip(m, kind){
+  const s = (m.sources || []).find(x=> x.kind === kind) || (m.sources || [])[0];
+  return s ? (kind + '：' + (s.note || '') + '\n' + s.url) : '';
+}
+function isDerived(m, path){
+  const p = path.indexOf('prec.') === 0 ? effectivePrecision() : path;
+  const list = m.derived || [];
+  return list.some(d=> p === d || p.indexOf(d + '.') === 0);
+}
+
+/* ============================================================
+   算力图表
+   ============================================================ */
+function renderChart(){
+  const box = $('#bars'); box.innerHTML = '';
+  const ms = selectedModels();
+  const key = effectivePrecision();
+  const meta = precisionMeta();
+  const densityLabel = state.density === 'dense' ? '稠密（dense）' : '含 2:4 稀疏（sparse）';
+  const unit = meta.unit;
+  if (!ms.length){ box.appendChild(el('div','empty','尚未选择显卡：勾选后这里会显示算力柱状图。')); $('#chart-sub').textContent=''; $('#chart-hint').textContent=''; $('#axis-mid').textContent=''; $('#axis-max').textContent=''; return; }
+
+  const items = ms.map(m=> ({ m, v: valueFor(m, key) }))
+                  .filter(x=> x.v !== null)
+                  .sort((a,b)=> b.v - a.v);
+  const missing = ms.length - items.length;
+  const max = items.length ? items[0].v : 0;
+
+  $('#chart-sub').textContent = meta.label + ' · ' + densityLabel;
+  $('#chart-hint').textContent = '口径：' + densityLabel + '峰值理论算力，单位 ' + unit +
+    (state.density === 'dense' && key.indexOf('int8') < 0 ? '' : '') +
+    '。数值来自 NVIDIA 官方页/数据表，或由其公布的每 SM 每时钟吞吐量推导（详见下方口径说明）。' +
+    (missing ? ' ' + missing + ' 款在该精度下不适用，已隐藏。' : '');
+  $('#axis-max').textContent = fmt(max, 0) + ' ' + unit;
+  $('#axis-mid').textContent = fmt(max/2, 0) + ' ' + unit;
+
+  if (!items.length){ box.appendChild(el('div','empty','所选显卡均不支持该精度的 Tensor 算力')); return; }
+
+  const powerKey = 'max_power_w';
+  items.forEach(x=>{
+    const row = el('div','bar-row');
+    const nm = el('div','nm');
+    nm.appendChild(document.createTextNode(x.m.name));
+    nm.appendChild(el('i', null, '  ' + (x.m.tag || x.m.architecture || '')));
+    row.appendChild(nm);
+    const track = el('div','bar-track');
+    const fill = el('div','bar-fill ' + (CAT_CLASS[x.m.category] || ''));
+    fill.style.width = Math.max(1.2, (x.v / max) * 100) + '%';
+    track.appendChild(fill); row.appendChild(track);
+    const p = num(x.m[powerKey]);
+    const val = el('div','bar-val', fmt(x.v, 0) + ' ' + unit);
+    if (p) val.appendChild(el('em', null, '≈ ' + (x.v / p).toFixed(2) + ' ' + unit + '/W'));
+    row.appendChild(val);
+    row.title = x.m.name + '：' + fmt(x.v, 1) + ' ' + unit + (p ? ' @ ' + p + 'W' : '');
+    box.appendChild(row);
+  });
+}
+
+/* ============================================================
+   主要指标速览（最多 4 张）
+   ============================================================ */
+function renderMini(){
+  const box = $('#mini'); box.innerHTML = '';
+  const ms = selectedModels().slice(0,4);
+  if (!ms.length){ box.appendChild(el('div','empty','尚未选择显卡：勾选后这里会显示核心数、算力、显存与能效等关键指标。')); return; }
+  const key = effectivePrecision();
+  const meta = precisionMeta();
+  const rows = [
+    { label:'CUDA 核心', get:m=> num(m.cuda_cores), unit:'', mode:'max', fmt:v=>v.toLocaleString('en-US') },
+    { label:'Tensor 核心', get:m=> num(m.tensor_cores), unit:'', mode:'max', fmt:v=>v.toLocaleString('en-US') },
+    { label:'加速频率', get:m=> num(m.boost_clock_mhz), unit:'MHz', mode:'max', fmt:v=>v.toFixed(0) },
+    { label:'FP32 峰值', get:m=> num(m.fp32_tflops_dense), unit:'TFLOPS', mode:'max', fmt:v=>v.toFixed(1) },
+    { label: meta.label + ' 算力', get:m=> valueFor(m,key), unit: meta.unit, mode:'max', fmt:v=>v.toFixed(0) },
+    { label:'显存容量', get:m=> num(m.memory_size_gb), unit:'GB', mode:'max', fmt:v=>v.toFixed(0) },
+    { label:'显存带宽', get:m=> num(m.memory_bandwidth_gbs), unit:'GB/s', mode:'max', fmt:v=>v.toFixed(0) },
+    { label:'最大功耗', get:m=> num(m.max_power_w), unit:'W', mode:'min', fmt:v=>v.toFixed(0) },
+    { label: meta.unit + '/W 能效', get:m=>{ const a=valueFor(m,key), p=num(m.max_power_w); return a&&p? a/p : null; },
+      unit: meta.unit+'/W', mode:'max', fmt:v=>v.toFixed(2) },
+    { label:'发布日期', get:m=> m.release_date, unit:'', mode:'plain', fmt:v=>String(v) }
+  ];
+  ms.forEach(m=>{
+    const card = el('div','mini-card');
+    card.appendChild(el('h3', null, m.name));
+    card.appendChild(el('div','arch', (m.architecture||'') + (m.codename? ' · '+m.codename : '') + (m.process? ' · '+m.process : '')));
+    const kvs = el('div','kvs');
+    rows.forEach(r=>{
+      const v = r.get(m);
+      const vals = ms.map(x=> r.get(x)).filter(x=> typeof x === 'number' && isFinite(x));
+      const hasComp = vals.length > 1 && r.mode !== 'plain';
+      const best = hasComp ? (r.mode==='max' ? Math.max(...vals) : Math.min(...vals)) : null;
+      const kv = el('div','kv');
+      kv.appendChild(el('span', null, r.label));
+      const b = el('b', null, (v==null || v==='') ? '—' : (typeof v === 'number' ? r.fmt(v) + (r.unit?(' '+r.unit):'') : String(v)));
+      if (best !== null && v === best) b.className = 'win';
+      kv.appendChild(b); kvs.appendChild(kv);
+    });
+    card.appendChild(kvs);
+    box.appendChild(card);
+  });
+}
+
+/* ============================================================
+   来源与口径
+   ============================================================ */
+function renderSources(){
+  const ul = $('#srclist'); ul.innerHTML = '';
+  const seen = new Set();
+  (state.data.sources || []).forEach(s=>{
+    if (seen.has(s.url)) return; seen.add(s.url);
+    const li = el('li');
+    const a = el('a', null, s.title || s.url); a.href = s.url; a.target = '_blank'; a.rel = 'noopener';
+    li.appendChild(a);
+    const use = s.use || s.precision || '';
+    if (use) li.appendChild(el('span','sub', ' — ' + use));
+    ul.appendChild(li);
+  });
+  const c = $('#caliber');
+  c.innerHTML = '';
+  (state.data.caliber || []).forEach(line=> c.appendChild(el('p', null, line)));
+  c.appendChild(el('p','sub', '数据快照生成时间：' + (state.data.generated || '—') + '（页面内保存的是抓取当时的官方口径，厂商可能随时改版）。'));
+}
+
+/* ============================================================
+   CSV 导出
+   ============================================================ */
+function exportCSV(){
+  const ms = selectedModels();
+  if (!ms.length){ toast('请先选择要导出的显卡'); return; }
+  const cols = [
+    ['名称','name'],['类别','category'],['架构','architecture'],['代号','codename'],['制程','process'],['发布','release_date'],
+    ['SM','sm_count'],['CUDA','cuda_cores'],['Tensor','tensor_cores'],['RT','rt_cores'],
+    ['基础频率 MHz','base_clock_mhz'],['加速频率 MHz','boost_clock_mhz'],
+    ['FP32 TFLOPS','fp32_tflops_dense'],['FP64 TFLOPS','fp64_tflops_dense'],['FP64 Tensor TFLOPS','fp64_tensor_tflops'],
+    ['FP4 稠密 TFLOPS','tensor_dense_tflops.fp4'],['FP6 稠密 TFLOPS','tensor_dense_tflops.fp6'],
+    ['FP8 稠密 TFLOPS','tensor_dense_tflops.fp8'],['FP16 稠密 TFLOPS','tensor_dense_tflops.fp16'],
+    ['BF16 稠密 TFLOPS','tensor_dense_tflops.bf16'],['TF32 稠密 TFLOPS','tensor_dense_tflops.tf32'],
+    ['INT8 稠密 TOPS','tensor_dense_tflops.int8'],
+    ['FP4 稀疏 TFLOPS','tensor_sparse_tflops.fp4'],['FP8 稀疏 TFLOPS','tensor_sparse_tflops.fp8'],
+    ['FP16 稀疏 TFLOPS','tensor_sparse_tflops.fp16'],['BF16 稀疏 TFLOPS','tensor_sparse_tflops.bf16'],
+    ['TF32 稀疏 TFLOPS','tensor_sparse_tflops.tf32'],['INT8 稀疏 TOPS','tensor_sparse_tflops.int8'],
+    ['官方 AI TOPS','ai_tops_official'],['AI TOPS 精度','ai_tops_precision'],
+    ['显存 GB','memory_size_gb'],['显存类型','memory_type'],['位宽 bit','memory_bus_width_bit'],
+    ['带宽 GB/s','memory_bandwidth_gbs'],['最大功耗 W','max_power_w'],['建议电源 W','recommended_psu_w'],
+    ['供电接口','power_connector'],['槽位','slot_width'],['长度 mm','length_mm'],['接口','interface'],
+    ['NVLink','nvlink'],['显示输出','display_outputs'],['备注','notes']
+  ];
+  const esc = v => { const s = v==null ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+  const lines = [cols.map(c=>esc(c[0])).join(',')];
+  ms.forEach(m=> lines.push(cols.map(c=>{
+    const v = dig(m, c[1]);
+    if (typeof v === 'boolean') return esc(v ? '是' : '否');
+    if (Array.isArray(v)) return esc(v.join(' / '));
+    return esc(v);
+  }).join(',')));
+  const csv = '\uFEFF' + lines.join('\r\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'nvidia-gpu-compare-' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=> URL.revokeObjectURL(a.href), 4000);
+  toast('已导出 ' + ms.length + ' 款显卡的 CSV');
+}
+</script>
+</body>
+</html>
